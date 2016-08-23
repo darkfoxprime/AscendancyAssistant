@@ -1,0 +1,593 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ResearchTree>
+    <ResearchProject name="Accel Energy Replenishment">
+        <Requirements>
+            <Requires name="Nanopropulsion"/>
+            <Requires name="Megagraph Theory"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Lush Growth Bomb"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Action At A Distance">
+        <Requirements>
+            <Requires name="Teleinfiltration"/>
+            <Requires name="Megagraph Theory"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Moving Part Exploiter"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Advanced Chemistry">
+        <Requirements>
+            <Requires name="Environmental Encapsulation"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Artificial Hydroponifier"/>
+            <Technology name="Ion Banger"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Advanced Exploration">
+        <Requirements>
+            <Requires name="Hyperlogic"/>
+            <Requires name="Mass Phasing"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Star Lane Hyperdrive"/>
+            <Technology name="Large Ship Hull"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Advanced Fun Techniques">
+        <Requirements>
+            <Requires name="Diplomatics"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Logic Factory"/>
+            <Technology name="Endless Party"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Advanced Interferometry">
+        <Requirements>
+            <Requires name="Spectral Analysis"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Subspace Phase Array"/>
+            <Technology name="Invasion Module"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Advanced Planetary Armaments">
+        <Requirements>
+            <Requires name="Coherent Photonics"/>
+            <Requires name="Large Scale Construction"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Surface Mega Shield"/>
+            <Technology name="Long Range Orbital Whopper"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Cloaking">
+        <Requirements>
+            <Requires name="Advanced Interferometry"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Surface Cloaker"/>
+            <Technology name="Orbital Cloaker"/>
+            <Technology name="Cloaker"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Coherent Photonics">
+        <Requirements>
+            <Requires name="Energy Redirection"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Ueberlaser"/>
+            <Technology name="Cannibalizer"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Diplomatics">
+        <Requirements>
+            <Requires name="Hyperlogic"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Observation Installation"/>
+            <Technology name="Alien Hospitality"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Doom Mechanization">
+        <Requirements>
+            <Requires name="Teleinfiltration"/>
+            <Requires name="Hyperwave Emission Control"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Disintegrator"/>
+            <Technology name="Self Destructotron"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="EM Field Coupling">
+        <Requirements>
+            <Requires name="Light Bending"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Electromagnetic Pulser"/>
+            <Technology name="Aural Cloud Constructor"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Ecosphere Phase Control">
+        <Requirements>
+            <Requires name="Hypergeometry"/>
+            <Requires name="Planetary Replenishment"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Fertilization Plant"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Energy Focusing">
+        <Requirements>
+            <Requires name="Coherent Photonics"/>
+            <Requires name="Murgatroyd Hypothesis"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Myrmidonic Carbonizer"/>
+            <Technology name="Accutron"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Energy Redirection">
+        <Requirements>
+            <Requires name="Hyperradiation"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Deactotron"/>
+            <Technology name="Recaller"/>
+            <Technology name="Sacrificial Orb"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Environmental Encapsulation">
+        <Requirements>
+            <Requires name="Xenobiology"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Colonizer"/>
+            <Technology name="Ion Wrap"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Fergnatz's Last Theorem">
+        <Requirements>
+            <Requires name="Scientific Sorcery"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Fergnatz Lens"/>
+            <Technology name="Gizmogrifier"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Gravimetric Combustion">
+        <Requirements>
+            <Requires name="Positron Guidance"/>
+            <Requires name="Gravimetrics"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Graviton Projector"/>
+            <Technology name="Toroidal Blaster"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Gravimetrics">
+        <Requirements>
+            <Requires name="Gravity Control"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Orbital Docs"/>
+            <Technology name="Molecular Tie Down"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Gravity Control">
+        <Requirements>
+            <Requires name="Spacetime Surfing"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Quantum Singularity Launcher"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Gravity Flow Control">
+        <Requirements>
+            <Requires name="Nanopropulsion"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Gravimetric Condensor"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Hyperdrive Technology">
+        <Requirements>
+            <Requires name="Teleinfiltration"/>
+            <Requires name="Star Lane Anatomy"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Lane Magnetron"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Hypergeometry">
+        <Requirements>
+            <Requires name="Fergnatz's Last Theorem"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Hypersphere Driver"/>
+            <Technology name="Hyperswapper"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Hyperlogic">
+        <Requirements>
+            <Requires name="Xenobiology"/>
+            <Requires name="Advanced Interferometry"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Research Campus"/>
+            <Technology name="Intellect Scrambler"/>
+            <Technology name="X Ray Megaglasses"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Hyperradiation">
+        <Requirements>
+            <Requires name="EM Field Coupling"/>
+            <Requires name="Momentum Reflection"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Hyperwave Tympanum"/>
+            <Technology name="Van Creeg Hypersplicer"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Hyperwave Emission Control">
+        <Requirements>
+            <Requires name="Hyperwave Technology"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Backfirer"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Hyperwave Technology">
+        <Requirements>
+            <Requires name="Energy Focusing"/>
+            <Requires name="Hyperradiation"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Orbital Mega Shield"/>
+            <Technology name="Hyperwave Nullifier"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Illusory Machinations">
+        <Requirements>
+            <Requires name="Nanofocusing"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Invulnerablizer"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Inertial Control">
+        <Requirements>
+            <Requires name="Star Lane Anatomy"/>
+            <Requires name="Matter Duplication"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Inertia Negator"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Interplanetary Exploration">
+        <Requirements>
+            <Requires name="Orbital Structures"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Small Hull"/>
+            <Technology name="Medium Hull"/>
+            <Technology name="Proton Shaver"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Large Scale Construction">
+        <Requirements>
+            <Requires name="Gravimetric Combustion"/>
+            <Requires name="Advanced Exploration"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Metroplex"/>
+            <Technology name="Gigantic Ship Hull"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Level Logic">
+        <Requirements>
+            <Requires name="Hyperlogic"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Scientist Takeover"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Light Bending">
+        <Requirements>
+            <Requires name="Hyperlogic"/>
+            <Requires name="Gravity Control"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Wave Scatterer"/>
+            <Technology name="Replenisher"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Mass Phasing">
+        <Requirements>
+            <Requires name="Gravimetrics"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Gravimentric Catapult"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Matter Duplication">
+        <Requirements>
+            <Requires name="Momentum Reflection"/>
+            <Requires name="Superstring Compression"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Cloning Plant"/>
+            <Technology name="Disarmer"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Megagraph Theory">
+        <Requirements>
+            <Requires name="Fergnatz's Last Theorem"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Internet"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Microbiotics">
+        <Requirements>
+            <Requires name="Matter Duplication"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Automation"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Molecular Explosives">
+        <Requirements>
+            <Requires name="Spectral Analysis"/>
+            <Requires name="Power Conversion"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Phase Bomb"/>
+            <Technology name="Mass Condensor"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Momentum Deconservation">
+        <Requirements>
+            <Requires name="Spacetime Surfing"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Concussion Shield"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Momentum Reflection">
+        <Requirements>
+            <Requires name="Subatomics"/>
+            <Requires name="Momentum Deconservation"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Gravity Distorter"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Murgatroyd Hypothesis">
+        <Requirements>
+            <Requires name="Level Logic"/>
+            <Requires name="Superstring Compression"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Short Range Orbital Whopper"/>
+            <Technology name="Murgatroy's Knower"/>
+            <Technology name="Gyro-Inductor"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Nanodeflection">
+        <Requirements>
+            <Requires name="Nanofocusing"/>
+            <Requires name="Inertial Control"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Nanoshell"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Nanoenergons">
+        <Requirements>
+            <Requires name="Hyperwave Technology"/>
+            <Requires name="Fergnatz's Last Theorem"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Nanowave Decoupling Net"/>
+            <Technology name="Nanotwirler"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Nanofocusing">
+        <Requirements>
+            <Requires name="Nanoenergons"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Nanomanipulator"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Nanopropulsion">
+        <Requirements>
+            <Requires name="Nanoenergons"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Nanowave Space Bender"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Orbital Structures">
+        <Technologies>
+            <Technology name="Shipyard"/>
+            <Technology name="Orbital Shield"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Planetary Replenishment">
+        <Requirements>
+            <Requires name="Environmental Encapsulation"/>
+            <Requires name="Gravimetric Combustion"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Habitat"/>
+            <Technology name="Terraforming"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Plasmatics">
+        <Requirements>
+            <Requires name="Subatomics"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Plasmatron"/>
+            <Technology name="Plasma Coupler"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Positron Guidance">
+        <Requirements>
+            <Requires name="Molecular Explosives"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Industrial Megafacility"/>
+            <Technology name="Positron Bouncer"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Power Conversion">
+        <Requirements>
+            <Requires name="Spacetime Surfing"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Orbital Missile Base"/>
+            <Technology name="Subatomic Scoop"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Repulsion Beam Tech">
+        <Requirements>
+            <Requires name="Energy Focusing"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Fleet Disperser"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Scientific Sorcery">
+        <Requirements>
+            <Requires name="Murgatroyd Hypothesis"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Smart Bomb"/>
+            <Technology name="Containment Device"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Self Modifying Structures">
+        <Requirements>
+            <Requires name="Microbiotics"/>
+            <Requires name="Nanofocusing"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Remote Repair Facility"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Snooping">
+        <Requirements>
+            <Requires name="Hyperwave Emission Control"/>
+            <Requires name="Thought Analysis"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Lane Endoscope"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Spacetime Surfing">
+        <Requirements>
+            <Requires name="Tonklin Diary"/>
+            <Requires name="Interplanetary Exploration"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Star Lane Drive"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Spectral Analysis">
+        <Requirements>
+            <Requires name="Tonklin Diary"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Fourier Missiles"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Star Lane Anatomy">
+        <Requirements>
+            <Requires name="Energy Redirection"/>
+            <Requires name="Plasmatics"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Lane Blocker"/>
+            <Technology name="Lane Destabilizer"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Stasis Field Science">
+        <Requirements>
+            <Requires name="Hyperradiation"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Tractor Beam"/>
+            <Technology name="Brunswik Dissipator"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Strong Force Weakening">
+        <Requirements>
+            <Requires name="Power Conversion"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Molecular Disassociator"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Subatomics">
+        <Requirements>
+            <Requires name="Positron Guidance"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Hyperpower Plant"/>
+            <Technology name="Quark Express"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Superconductivity">
+        <Requirements>
+            <Requires name="Tonklin Diary"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Surface Shield"/>
+            <Technology name="Mass Barrage Gun"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Superstring Compression">
+        <Requirements>
+            <Requires name="Plasmatics"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Hyperfuel"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Teleinfiltration">
+        <Requirements>
+            <Requires name="Hyperwave Technology"/>
+            <Requires name="Thought Analysis"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Shield Blaster"/>
+            <Technology name="Specialty Blaster"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Thought Analysis">
+        <Requirements>
+            <Requires name="Level Logic"/>
+        </Requirements>
+        <Technologies>
+            <Technology name="Engineering Retreat"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Tonklin Diary">
+        <Technologies>
+            <Technology name="Tonklin Motor"/>
+            <Technology name="Tonklin Frequency Analyzer"/>
+        </Technologies>
+    </ResearchProject>
+    <ResearchProject name="Xenobiology">
+        <Technologies>
+            <Technology name="Xeno Archeological Dig"/>
+        </Technologies>
+    </ResearchProject>
+</ResearchTree>
