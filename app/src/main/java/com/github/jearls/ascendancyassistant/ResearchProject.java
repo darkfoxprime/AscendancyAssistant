@@ -90,6 +90,10 @@ public class ResearchProject {
         technologies.remove(technology);
     }
 
+    public boolean hasTechnology(String technology) {
+        return technologies.contains(technology);
+    }
+
     public Iterator<ResearchProject> getDependencies() {
         return dependencies.iterator();
     }
@@ -100,5 +104,9 @@ public class ResearchProject {
 
     public void removeDependency(ResearchProject dependency) {
         dependencies.remove(dependency);
+    }
+
+    public boolean hasDependency(String dependency) {
+        return dependencies.contains(dependency);
     }
 }
