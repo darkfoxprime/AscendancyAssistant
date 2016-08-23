@@ -1,5 +1,8 @@
 package com.github.jearls.ascendancyassistant;
 
+import static org.junit.Assert.assertEquals;
+import org.junit.Test;
+
 import org.xmlpull.v1.*;
 import java.io.IOException;
 import java.io.FileReader;
@@ -14,360 +17,68 @@ public class ResearchTreeTest {
 
 ////////////////////////////////////////////////////////////////////////
 
+    class DummyXMLAttribute {
+        public String name;
+        public String value;
+        public DummyXMLAttribute(String name, String value) {
+            this.name = name;
+            this.value = value;
+        }
+    }
+
+    class DummyXmlEvent {
+        public int event;
+        public boolean isEmpty;
+        public String elementName;
+        public String textContent;
+        public DummyXMLAttribute[] attributes;
+
+        public DummyXmlEvent(int event, boolean isEmpty, String elementName, String textContent, DummyXMLAttribute[] attributes) {
+            this.event = event;
+            this.isEmpty = isEmpty;
+            this.elementName = elementName;
+            this.textContent = textContent;
+            this.attributes = attributes;
+        }
+    }
+
+    class DummyXmlStartTag extends DummyXmlEvent {
+        public DummyXmlStartTag(String elementName, DummyXMLAttributes[] attributes) {
+            super(XmlPullProcess.START_TAG, false, elementName, null, attributes);
+        }
+    }
+
+    class DummyXmlStartEndTag extends DummyXmlEvent {
+        public DummyXmlStartEndTag(String elementName, DummyXMLAttributes[] attributes) {
+            super(XmlPullProcess.START_TAG, true, elementName, null, attributes);
+        }
+    }
+
+    class DummyXmlEndTag extends DummyXmlEvent {
+        public DummyXmlEndTag() {
+            super(XmlPullProcess.END_TAG, false, null, null, {});
+        }
+    }
+
+    class DummyXmlText extends DummyXmlEvent {
+        public DummyXmlText(String text) {
+            super(XmlPullProcess.TEXT, false, null, text, {});
+        }
+    }
+
+    class DummyXmlEndDocument extends DummyXmlEvent {
+        public DummyXmlEndDocument() {
+            super(XmlPullProcess.END_DOCUMENT, false, null, null, {});
+        }
+    }
+
     class DummyXmlPullParser implements XmlPullParser {
 
-        // <ResearchTree>
-        //  <ResearchProject name="foo">
-        //   <Technologies>
-        //    <Technology name="boo!" />
-        //   </Technology>
-        //  </ResearchProject>
-        //  <ResearchProject name="bar">
-        //   <Requirements>
-        //    <Requires name="foo" />
-        //   </Requirements>
-        //  </ResearchProject>
-        //  <ResearchProject name="baz" />
-        //  <ResearchProject name="quux">
-        //   <Requirements>
-        //    <Requires name="foo" />
-        //    <Requires name="baz" />
-        //   </Requirements>
-        //   <Technologies>
-        //    <Technology name="cookies!" />
-        //   </Technology>
-        //  </ResearchProject>
-        // </ResearchTree>
-        //    
-
-        final int eventType[] = {
-            XmlPullParser.START_TAG , // ResearchTree
-            XmlPullParser.TEXT      , // new line
-            XmlPullParser.START_TAG , // ResearchProject name="foo"
-            XmlPullParser.TEXT      , // new line
-            XmlPullParser.START_TAG , // Technologies
-            XmlPullParser.TEXT      , // new line
-            XmlPullParser.START_TAG , // Technology name="boo!"
-            XmlPullParser.END_TAG   , // Technology
-            XmlPullParser.TEXT      , // new line
-            XmlPullParser.END_TAG   , // Technologies
-            XmlPullParser.TEXT      , // new line
-            XmlPullParser.END_TAG   , // ResearchProject
-            XmlPullParser.TEXT      , // new line
-            XmlPullParser.START_TAG , // ResearchProject name="bar"
-            XmlPullParser.TEXT      , // new line
-            XmlPullParser.START_TAG , // Requirements
-            XmlPullParser.TEXT      , // new line
-            XmlPullParser.START_TAG , // Requires name="foo"
-            XmlPullParser.END_TAG   , // Requires
-            XmlPullParser.TEXT      , // new line
-            XmlPullParser.END_TAG   , // Requirements
-            XmlPullParser.TEXT      , // new line
-            XmlPullParser.END_TAG   , // ResearchProject
-            XmlPullParser.TEXT      , // new line
-            XmlPullParser.START_TAG , // ResearchProject name="baz"
-            XmlPullParser.END_TAG   , // ResearchProject
-            XmlPullParser.TEXT      , // new line
-            XmlPullParser.START_TAG , // ResearchProject name="bar"
-            XmlPullParser.TEXT      , // new line
-            XmlPullParser.START_TAG , // Requirements
-            XmlPullParser.TEXT      , // new line
-            XmlPullParser.START_TAG , // Requires name="foo"
-            XmlPullParser.END_TAG   , // Requires
-            XmlPullParser.TEXT      , // new line
-            XmlPullParser.START_TAG , // Requires name="baz"
-            XmlPullParser.END_TAG   , // Requires
-            XmlPullParser.TEXT      , // new line
-            XmlPullParser.END_TAG   , // Requirements
-            XmlPullParser.TEXT      , // new line
-            XmlPullParser.START_TAG , // Technologies
-            XmlPullParser.TEXT      , // new line
-            XmlPullParser.START_TAG , // Technology name="cookies!"
-            XmlPullParser.END_TAG   , // Technology
-            XmlPullParser.TEXT      , // new line
-            XmlPullParser.END_TAG   , // Technologies
-            XmlPullParser.TEXT      , // new line
-            XmlPullParser.END_TAG   , // ResearchProject
-            XmlPullParser.TEXT      , // new line
-            XmlPullParser.END_TAG   , // ResearchTree
-            XmlPullParser.TEXT      , // new line
-            XmlPullParser.END_DOCUMENT
-        } ;
-
-        final boolean elementIsEmpty[] = {
-            false ,
-            false ,
-            false ,
-            false ,
-            false ,
-            false ,
-            true ,
-            false ,
-            false ,
-            false ,
-            false ,
-            false ,
-            false ,
-            false ,
-            false ,
-            false ,
-            false ,
-            true ,
-            false ,
-            false ,
-            false ,
-            false ,
-            false ,
-            false ,
-            true ,
-            false ,
-            false ,
-            false ,
-            false ,
-            false ,
-            false ,
-            true ,
-            false ,
-            false ,
-            true ,
-            false ,
-            false ,
-            false ,
-            false ,
-            false ,
-            false ,
-            true ,
-            false ,
-            false ,
-            false ,
-            false ,
-            false ,
-            false ,
-            false ,
-            false ,
-            false ,
-        } ;
-
-        final String elementName[] = {
-            "ResearchTree" ,
-            null ,
-            "ResearchProject" ,
-            null ,
-            "Technologies" ,
-            null ,
-            "Technology" ,
-            null ,
-            null ,
-            null ,
-            null ,
-            null ,
-            null ,
-            "ResearchProject" ,
-            null ,
-            "Requirements" ,
-            null ,
-            "Requires" ,
-            null ,
-            null ,
-            null ,
-            null ,
-            null ,
-            null ,
-            "ResearchProject" ,
-            null ,
-            null ,
-            "ResearchProject" ,
-            null ,
-            "Requirements" ,
-            null ,
-            "Requires" ,
-            null ,
-            null ,
-            "Requires" ,
-            null ,
-            null ,
-            null ,
-            null ,
-            "Technologies" ,
-            null ,
-            "Technology" ,
-            null ,
-            null ,
-            null ,
-            null ,
-            null ,
-            null ,
-            null ,
-            null ,
-            null ,
-        } ;
-
-        final String textContent[] = {
-            null ,
-            "\n" ,
-            null ,
-            "\n" ,
-            null ,
-            "\n" ,
-            null ,
-            null ,
-            "\n" ,
-            null ,
-            "\n" ,
-            null ,
-            "\n" ,
-            null ,
-            "\n" ,
-            null ,
-            "\n" ,
-            null ,
-            null ,
-            "\n" ,
-            null ,
-            "\n" ,
-            null ,
-            "\n" ,
-            null ,
-            null ,
-            "\n" ,
-            null ,
-            "\n" ,
-            null ,
-            "\n" ,
-            null ,
-            null ,
-            "\n" ,
-            null ,
-            null ,
-            "\n" ,
-            null ,
-            "\n" ,
-            null ,
-            "\n" ,
-            null ,
-            null ,
-            "\n" ,
-            null ,
-            "\n" ,
-            null ,
-            "\n" ,
-            null ,
-            "\n" ,
-            null ,
-        } ;
-
-        final String[] attributeValues[] = {
-            {} ,
-            {} ,
-            { "foo" , } ,
-            {} ,
-            {} ,
-            {} ,
-            { "boo!" , } ,
-            {} ,
-            {} ,
-            {} ,
-            {} ,
-            {} ,
-            {} ,
-            { "bar" , } ,
-            {} ,
-            {} ,
-            {} ,
-            { "foo" , } ,
-            {} ,
-            {} ,
-            {} ,
-            {} ,
-            {} ,
-            {} ,
-            { "baz" , } ,
-            {} ,
-            {} ,
-            { "bar" , } ,
-            {} ,
-            {} ,
-            {} ,
-            { "foo" , } ,
-            {} ,
-            {} ,
-            { "baz" , } ,
-            {} ,
-            {} ,
-            {} ,
-            {} ,
-            {} ,
-            {} ,
-            { "cookies!" , } ,
-            {} ,
-            {} ,
-            {} ,
-            {} ,
-            {} ,
-            {} ,
-            {} ,
-            {} ,
-            {} ,
-        } ;
-
-        final String[] attributeNames[] = {
-            {} ,
-            {} ,
-            { "name" , } ,
-            {} ,
-            {} ,
-            {} ,
-            { "name" , } ,
-            {} ,
-            {} ,
-            {} ,
-            {} ,
-            {} ,
-            {} ,
-            { "name" , } ,
-            {} ,
-            {} ,
-            {} ,
-            { "name" , } ,
-            {} ,
-            {} ,
-            {} ,
-            {} ,
-            {} ,
-            {} ,
-            { "name" , } ,
-            {} ,
-            {} ,
-            { "name" , } ,
-            {} ,
-            {} ,
-            {} ,
-            { "name" , } ,
-            {} ,
-            {} ,
-            { "name" , } ,
-            {} ,
-            {} ,
-            {} ,
-            {} ,
-            {} ,
-            {} ,
-            { "name" , } ,
-            {} ,
-            {} ,
-            {} ,
-            {} ,
-            {} ,
-            {} ,
-            {} ,
-            {} ,
-            {} ,
-        } ;
-
+        DummyXMLEvents[] events;
         int index;
         int depth;
 
-        public DummyXmlPullParser() {
+        public DummyXmlPullParser(DummyXMLEvents[] events) {
             self.setInput(null);
         }
 
@@ -439,7 +150,7 @@ public class ResearchTreeTest {
         }
 
         public String getText() {
-            return self.textContent[self.index];
+            return self.events[self.index].textContent;
         }
 
         public char[] getTextCharacters(int[] startLengthReturn) {
@@ -463,7 +174,7 @@ public class ResearchTreeTest {
         }
 
         public String getName() {
-            return self.elementName[self.index];
+            return self.events[self.index].elementName;
         }
 
         public String getPrefix() {
@@ -474,12 +185,12 @@ public class ResearchTreeTest {
             if (self.getEventType() != XmlPullParser.START_TAG) {
                 throw new XmlPullParserException("Invalid element");
             }
-            return self.elementIsEmpty[self.index];
+            return self.events[self.index].isEmpty;
         }
 
         public int getAttributeCount() {
             if (self.getEventType() == XmlPullParser.START_TAG) {
-                return (self.attributeNames[self.index].length);
+                return self.events[self.index].attributes.length;
             }
             return -1;
         }
@@ -495,7 +206,7 @@ public class ResearchTreeTest {
             if (index < 0 || index >= self.getAttributeCount()) {
                 throw new IndexOutOfBoundsException("Invalid attribute index");
             }
-            return self.attributeNames[self.index][index];
+            return self.events[self.index].attributes[index].name;
         }
 
         public String getAttributePrefix(int index) {
@@ -509,7 +220,7 @@ public class ResearchTreeTest {
             if (index < 0 || index >= self.getAttributeCount()) {
                 throw new IndexOutOfBoundsException("Invalid attribute index");
             }
-            return self.attributeValues[self.index][index];
+            return self.events[self.index].attributes[index].value;
         }
 
         public String getAttributeValue(String namespace, String name) {
@@ -517,31 +228,33 @@ public class ResearchTreeTest {
                 throw new XmlPullParserException("Invalid element");
             }
             if (namespace == null) {
-                for (int i = 0; i < self.attributeNames[self.index].length; i += 1) {
-                    if (self.attributeNames[self.index][i] == name) {
-                        return self.attributeValues[self.index][i];
-                    }
+                int i = self.getAttributeCount() - 1;
+                while ((i >= 0) && (self.getAttributeName(i) != name)) {
+                    i -= 1;
+                }
+                if (i >= 0) {
+                    return self.getAttributeValue(i);
                 }
             }
             return null;
         }
 
         public int getEventType() {
-            return self.eventType[self.index];
+            return self.events[self.index].event;
         }
 
         public int next() {
-            if (self.index > 0 && self.eventType[self.index-1] == XmlPullParser.END_TAG) {
+            if (self.index > 0 && self.events[self.index-1].event == XmlPullParser.END_TAG) {
                 self.depth -= 1;
             }
             self.index += 1;
-            if (self.index >= self.eventType.length) {
+            if (self.index >= self.events.length) {
                 throw new XmlPullParserException("No more data");
             }
-            if (self.eventType[self.index] == XmlPullParser.START_TAG) {
+            if (self.events[self.index].event == XmlPullParser.START_TAG) {
                 self.depth += 1;
             }
-            return self.eventType[self.index];
+            return self.events[self.index].event;
         }
 
         public int nextToken() {
@@ -560,50 +273,189 @@ public class ResearchTreeTest {
 
 ////////////////////////////////////////////////////////////////////////
 
-    static int setProjectOrder(ResearchProject project, Map<ResearchProject,Integer> ordering) {
-        if (ordering.containsKey(project)) {
-            return ordering.get(project).intValue();
-        } else {
-            Iterator<ResearchProject> deps = project.getDependencies();
-            int order = 0;
-            while (deps.hasNext()) {
-                int depOrder = setProjectOrder(deps.next(), ordering);
-                if (depOrder >= order) {
-                    order = depOrder + 1;
-                }
-            }
-            ordering.put(project, new Integer(order));
-            return order;
+    public void assertTreeHasProjectCount(ResearchTree tree, int count) {
+        Iterator<ResearchProject> pi = tree.getResearchProjects();
+        int found = 0;
+        while (pi.hasNext()) {
+            found += 1;
+            pi.next();
         }
+        assertEquals("Expected " + count + " research projects, found " + found, count, found);
+    }
+    public void assertTreeHasProjectNamed(ResearchTree tree, String project) {
+        assertNotNull("Expected to find research project " + project, tree.getResearchProject(project));
+    }
+    public void assertNamedProjectHasDependencyCount(ResearchTree tree, String project, int count) {
+        assertTreeHasProjectNamed(tree, project);
+        Iterator<ResearchProject> pi = tree.getResearchProject(project).getDependencies();
+        int found = 0;
+        while (pi.hasNext()) {
+            found += 1;
+            pi.next();
+        }
+        assertEquals("Expected " + count + " dependencies, found " + found, count, found);
+    }
+    public void assertNamedProjectHasDependencyNamed(ResearchTree tree, String project, String dep) {
+        assertTreeHasProjectNamed(tree, project);
+        assertTreeHasProjectNamed(tree, dep);
+        assertNotNull("Expected to find dependency " + dep, tree.getResearchProject(project).hasDependency(tree.getResearchProject(dep)));
+    }
+    public void assertNamedProjectHasTechnologyCount(ResearchTree tree, String project, int count) {
+        assertTreeHasProjectNamed(tree, project);
+        Iterator<String> pi = tree.getResearchProject(project).getTechnologie();
+        int found = 0;
+        while (pi.hasNext()) {
+            found += 1;
+            pi.next();
+        }
+        assertEquals("Expected " + count + " dependencies, found " + found, count, found);
+    }
+    public void assertNamedProjectHasTechnologyNamed(ResearchTree tree, String project, String tech) {
+        assertTreeHasProjectNamed(tree, project);
+        assertNotNull("Expected to find technology " + tech, tree.getResearchProject(project).hasTechnology(tech));
     }
 
-    public static void main(String args[]) throws IOException, XmlPullParserException {
-        XmlPullParser testParser = new DummyXmlPullParser();
-        ResearchTree tree = ResearchTree.loadXmlResearchTree(testParser);
-        // we should have four projects:
-        //   foo - dependencies { }, technologies { "boo!" }
-        //   bar - dependencies { "foo" }, technologies { }
-        //   baz - dependencies { }, technologies { }
-        //   quux - dependencies { "foo", "baz" }, technologies { "cookies!" }
-        Iterator<ResearchProject> pi = tree.getResearchProjects();
-        while (pi.hasNext()) {
-            ResearchProject proj = pi.next();
-            if (proj.getName() == "foo") {
-                //   dependencies { }
-                //   technologies { "boo!" }
-            } else if (proj.getName() == "bar") {
-                //   dependencies { "foo" }
-                //   technologies { }
-            } else if (proj.getName() == "baz") {
-                //   dependencies { }
-                //   technologies { }
-            } else if (proj.getName() == "quux") {
-                //   dependencies { "foo", "baz" }
-                //   technologies { "cookies!" }
-            } else {
-                System.err.println("Unknown project " + proj.getName());
-            }
+    @Test
+    public void testEmptyResearchTree() {
+        DummyXMLEvents[] events = {
+            new DummyXMLStartEndTag("ResearchTree", {}) ,
+            new DummyXMLEndDocument() ,
         }
+        XmlPullParser xpp = new DummyXmlPullParser(events);
+        ResearchTree tree = ResearchTree.loadXmlResearchTree(xpp);
+        assertTreeHasProjectCount(tree, 0);
+    }
+
+    @Test
+    public void testTextContent() {
+        DummyXMLEvents[] events = {
+            new DummyXMLStartTag("ResearchTree", {}) ,
+            new DummyXMLText("This is some text") ,
+            new DummyXMLEndTag() ,
+            new DummyXMLEndDocument() ,
+        }
+        XmlPullParser xpp = new DummyXmlPullParser(events);
+        ResearchTree tree = ResearchTree.loadXmlResearchTree(xpp);
+        assertTreeHasProjectCount(tree, 0);
+    }
+
+    @Test
+    public void testSingleResearchProject() {
+        DummyXMLEvents[] events = {
+            new DummyXMLStartTag("ResearchTree", {}) ,
+            new DummyXMLStartEndTag("ResearchProject", {new DummyXMLAttribute("name", "project")}) ,
+            new DummyXMLEndTag() ,
+            new DummyXMLEndDocument() ,
+        }
+        XmlPullParser xpp = new DummyXmlPullParser(events);
+        ResearchTree tree = ResearchTree.loadXmlResearchTree(xpp);
+        assertTreeHasProjectCount(tree, 1);
+        assertTreeHasProjectNamed(tree, "project");
+        assertNamedProjectHasDependencyCount(tree, "project", 0);
+        assertNamedProjectHasTechnologyCount(tree, "project", 0);
+    }
+
+    @Test
+    public void testResearchProjectTechnology() {
+        DummyXMLEvents[] events = {
+            new DummyXMLStartTag("ResearchTree", {}) ,
+            new DummyXMLStartTag("ResearchProject", {new DummyXMLAttribute("name", "project")}) ,
+            new DummyXMLStartTag("Technologies", {}) ,
+            new DummyXMLStartEndTag("Technology", {"name", "tech"}) ,
+            new DummyXMLEndTag() ,
+            new DummyXMLEndTag() ,
+            new DummyXMLEndTag() ,
+            new DummyXMLEndDocument() ,
+        }
+        XmlPullParser xpp = new DummyXmlPullParser(events);
+        ResearchTree tree = ResearchTree.loadXmlResearchTree(xpp);
+        assertTreeHasProjectCount(tree, 1);
+        assertTreeHasProjectNamed(tree, "project");
+        assertNamedProjectHasDependencyCount(tree, "project", 0);
+        assertNamedProjectHasTechnologyCount(tree, "project", 1);
+        assertNamedProjectHasTechnologyNamed(tree, "project", "tech");
+    }
+
+    @Test
+    public void testResearchProjectDependency() {
+        DummyXMLEvents[] events = {
+            new DummyXMLStartTag("ResearchTree", {}) ,
+            new DummyXMLStartEndTag("ResearchProject", {new DummyXMLAttribute("name", "project")}) ,
+            new DummyXMLStartTag("ResearchProject", {new DummyXMLAttribute("name", "project 2")}) ,
+            new DummyXMLStartTag("Requirements", {}) ,
+            new DummyXMLStartEndTag("Requires", {"name", "project"}) ,
+            new DummyXMLEndTag() ,
+            new DummyXMLEndTag() ,
+            new DummyXMLEndTag() ,
+            new DummyXMLEndDocument() ,
+        }
+        XmlPullParser xpp = new DummyXmlPullParser(events);
+        ResearchTree tree = ResearchTree.loadXmlResearchTree(xpp);
+        assertTreeHasProjectCount(tree, 2);
+        assertTreeHasProjectNamed(tree, "project");
+        assertTreeHasProjectNamed(tree, "project 2");
+        assertNamedProjectHasDependencyCount(tree, "project", 0);
+        assertNamedProjectHasTechnologyCount(tree, "project", 0);
+        assertNamedProjectHasDependencyCount(tree, "project 2", 1);
+        assertNamedProjectHasDependencyNamed(tree, "project 2", "project');
+        assertNamedProjectHasTechnologyCount(tree, "project", 0);
+    }
+
+    @Test
+    public void testComplexResearchProjectDependencies() {
+        DummyXMLEvents[] events = {
+            new DummyXMLStartTag("ResearchTree", {}) ,
+            new DummyXMLStartEndTag("ResearchProject", {new DummyXMLAttribute("name", "p1")}) ,
+            new DummyXMLStartTag("ResearchProject", {new DummyXMLAttribute("name", "p2")}) ,
+            new DummyXMLStartTag("Requirements", {}) ,
+            new DummyXMLStartEndTag("Requires", {"name", "p1"}) ,
+            new DummyXMLEndTag() ,
+            new DummyXMLStartTag("Technologies", {}) ,
+            new DummyXMLStartEndTag("Technology", {"name", "tech2"}) ,
+            new DummyXMLEndTag() ,
+            new DummyXMLEndTag() ,
+            new DummyXMLStartTag("ResearchProject", {new DummyXMLAttribute("name", "p3")}) ,
+            new DummyXMLStartTag("Requirements", {}) ,
+            new DummyXMLStartEndTag("Requires", {"name", "p1"}) ,
+            new DummyXMLEndTag() ,
+            new DummyXMLStartTag("Technologies", {}) ,
+            new DummyXMLStartEndTag("Technology", {"name", "tech3"}) ,
+            new DummyXMLEndTag() ,
+            new DummyXMLEndTag() ,
+            new DummyXMLStartTag("ResearchProject", {new DummyXMLAttribute("name", "p4")}) ,
+            new DummyXMLStartTag("Requirements", {}) ,
+            new DummyXMLStartEndTag("Requires", {"name", "p2"}) ,
+            new DummyXMLStartEndTag("Requires", {"name", "p3"}) ,
+            new DummyXMLEndTag() ,
+            new DummyXMLStartTag("Technologies", {}) ,
+            new DummyXMLStartEndTag("Technology", {"name", "tech4"}) ,
+            new DummyXMLEndTag() ,
+            new DummyXMLEndTag() ,
+            new DummyXMLEndTag() ,
+            new DummyXMLEndDocument() ,
+        }
+        XmlPullParser xpp = new DummyXmlPullParser(events);
+        ResearchTree tree = ResearchTree.loadXmlResearchTree(xpp);
+        assertTreeHasProjectCount(tree, 4);
+        assertTreeHasProjectNamed(tree, "p1");
+        assertNamedProjectHasDependencyCount(tree, "p1", 0);
+        assertNamedProjectHasTechnologyCount(tree, "p1", 0);
+        assertTreeHasProjectNamed(tree, "p2");
+        assertNamedProjectHasDependencyCount(tree, "p2", 1);
+        assertNamedProjectHasDependencyNamed(tree, "p2", "p1");
+        assertNamedProjectHasTechnologyCount(tree, "p2", 1);
+        assertNamedProjectHasTechnologyNamed(tree, "p2", "tech2");
+        assertTreeHasProjectNamed(tree, "p3");
+        assertNamedProjectHasDependencyCount(tree, "p3", 1);
+        assertNamedProjectHasDependencyNamed(tree, "p3", "p1");
+        assertNamedProjectHasTechnologyCount(tree, "p3", 1);
+        assertNamedProjectHasTechnologyNamed(tree, "p3", "tech3");
+        assertTreeHasProjectNamed(tree, "p4");
+        assertNamedProjectHasDependencyCount(tree, "p4", 2);
+        assertNamedProjectHasDependencyNamed(tree, "p4", "p2");
+        assertNamedProjectHasDependencyNamed(tree, "p4", "p3");
+        assertNamedProjectHasTechnologyCount(tree, "p4", 1);
+        assertNamedProjectHasTechnologyNamed(tree, "p4", "tech4");
     }
 
 }
