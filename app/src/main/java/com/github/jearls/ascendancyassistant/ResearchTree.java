@@ -1,7 +1,6 @@
 package com.github.jearls.ascendancyassistant;
 
-import android.content.res.XmlResourceParser;
-
+import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.IOException;
@@ -23,7 +22,7 @@ public class ResearchTree {
     public ResearchTree() {
     }
 
-    public static ResearchTree loadXmlResearchTree(XmlResourceParser parser) throws IOException {
+    public static ResearchTree loadXmlResearchTree(XmlPullParser parser) throws IOException {
         final int STATE_START = 0;
         final int STATE_SUCCESS = 1;
         final int STATE_ERROR = 2;
@@ -53,36 +52,37 @@ public class ResearchTree {
         int nextState = STATE_START, state = STATE_START;
         ResearchProject project = null;
         ResearchTree tree = new ResearchTree();
+        int tag = -1;
 
         while (nextState != STATE_ERROR && nextState != STATE_SUCCESS) {
             state = nextState;
             nextState = STATE_ERROR;
             try {
-                int tag = parser.nextTag();
+                tag = parser.next();
+                String name = null;
+                if (tag == parser.TEXT) {
+                    nextState = state;
+                    continue;
+                }
                 switch (tag) {
-                    case XmlResourceParser.START_DOCUMENT:
+                    case XmlPullParser.START_DOCUMENT:
                         tag = TAG_START_DOCUMENT;
                         break;
-                    case XmlResourceParser.END_DOCUMENT:
+                    case XmlPullParser.END_DOCUMENT:
                         tag = TAG_END_DOCUMENT;
                         break;
-                    case XmlResourceParser.START_TAG:
+                    case XmlPullParser.START_TAG:
                         tag = parser.getName().toLowerCase().hashCode();
+                        name = parser.getAttributeValue(null, "name");
                         break;
-                    case XmlResourceParser.END_TAG:
+                    case XmlPullParser.END_TAG:
                         tag = parser.getName().toLowerCase().hashCode() + 1;
                         break;
                     default:
                         tag = 0;
                 }
-                String name = parser.getAttributeValue(null, "name");
                 switch (state) {
                     case STATE_START:
-                        if (tag == TAG_START_DOCUMENT) {
-                            nextState = STATE_DOCUMENT;
-                        }
-                        break;
-                    case STATE_DOCUMENT:
                         if (tag == TAG_END_DOCUMENT) {
                             nextState = STATE_SUCCESS;
                         } else if (tag == TAG_START_RESEARCH_TREE) {
@@ -91,7 +91,7 @@ public class ResearchTree {
                         break;
                     case STATE_RESEARCH_TREE:
                         if (tag == TAG_END_RESEARCH_TREE) {
-                            nextState = STATE_DOCUMENT;
+                            nextState = STATE_START;
                         } else if (tag == TAG_START_RESEARCH_PROJECT) {
                             nextState = STATE_RESEARCH_PROJECT;
                             project = tree.researchProjects.get(name);
@@ -125,7 +125,7 @@ public class ResearchTree {
                         break;
                     case STATE_REQUIRES:
                         if (tag == TAG_END_REQUIRES) {
-                            state = STATE_REQUIREMENTS;
+                            nextState = STATE_REQUIREMENTS;
                         }
                         break;
                     case STATE_TECHNOLOGIES:
@@ -138,15 +138,15 @@ public class ResearchTree {
                         break;
                     case STATE_TECHNOLOGY:
                         if (tag == TAG_END_TECHNOLOGY) {
-                            state = STATE_TECHNOLOGIES;
+                            nextState = STATE_TECHNOLOGIES;
                         }
                         break;
                 }
             } catch (XmlPullParserException | IOException e) {
-                state = STATE_ERROR;
+                nextState = STATE_ERROR;
             }
         }
-        if (state != STATE_SUCCESS) {
+        if (nextState != STATE_SUCCESS) {
             throw new IOException("Invalid XML research tree");
         }
         return tree;
@@ -167,4 +167,5 @@ public class ResearchTree {
     public Collection<ResearchProject> getResearchProjects() {
         return researchProjects.values();
     }
+
 }
