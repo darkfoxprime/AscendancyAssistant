@@ -6,9 +6,7 @@ import org.xmlpull.v1.XmlPullParserException;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * The research "tree" is really just a map of project names to
@@ -16,8 +14,9 @@ import java.util.Set;
  *
  * @author Johnson Earls
  */
+@SuppressWarnings("WeakerAccess")
 public class ResearchTree {
-    Map<String, ResearchProject> researchProjects = new HashMap<>();
+    final Map<String, ResearchProject> researchProjects = new HashMap<>();
 
     public ResearchTree() {
     }
@@ -26,7 +25,7 @@ public class ResearchTree {
         final int STATE_START = 0;
         final int STATE_SUCCESS = 1;
         final int STATE_ERROR = 2;
-        final int STATE_DOCUMENT = 3;
+        //final int STATE_DOCUMENT = 3;
         final int STATE_RESEARCH_TREE = 4;
         final int STATE_RESEARCH_PROJECT = 5;
         final int STATE_REQUIREMENTS = 6;
@@ -49,10 +48,10 @@ public class ResearchTree {
         final int TAG_START_TECHNOLOGY = "technology".hashCode();
         final int TAG_END_TECHNOLOGY = TAG_START_TECHNOLOGY + 1;
 
-        int nextState = STATE_START, state = STATE_START;
+        int nextState = STATE_START, state;
         ResearchProject project = null;
         ResearchTree tree = new ResearchTree();
-        int tag = -1;
+        int tag;
 
         while (nextState != STATE_ERROR && nextState != STATE_SUCCESS) {
             state = nextState;
@@ -60,7 +59,7 @@ public class ResearchTree {
             try {
                 tag = parser.next();
                 String name = null;
-                if (tag == parser.TEXT) {
+                if (tag == XmlPullParser.TEXT) {
                     nextState = state;
                     continue;
                 }
@@ -97,7 +96,7 @@ public class ResearchTree {
                             project = tree.researchProjects.get(name);
                             if (project == null) {
                                 project = new ResearchProject(name);
-                                tree.researchProjects.put(name, project);
+                                tree.addResearchProject(project);
                             }
                         }
                         break;

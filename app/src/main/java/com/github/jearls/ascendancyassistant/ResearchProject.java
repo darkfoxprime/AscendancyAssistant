@@ -13,10 +13,11 @@ import java.util.Set;
  *
  * @author Johnson Earls
  */
+@SuppressWarnings("WeakerAccess")
 public class ResearchProject {
-    String name;
-    Set<String> technologies;
-    Set<ResearchProject> dependencies;
+    final String name;
+    final Set<String> technologies;
+    final Set<ResearchProject> dependencies;
     boolean complete;
     boolean goal;
     boolean inPath;
@@ -106,7 +107,7 @@ public class ResearchProject {
         dependencies.remove(dependency);
     }
 
-    public boolean hasDependency(String dependency) {
+    public boolean hasDependency(ResearchProject dependency) {
         return dependencies.contains(dependency);
     }
 }
