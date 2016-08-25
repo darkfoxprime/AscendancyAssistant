@@ -4,9 +4,15 @@ import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
+
+//import android.util.Log;
 
 /**
  * The research "tree" is really just a map of project names to
@@ -15,156 +21,248 @@ import java.util.Map;
  * @author Johnson Earls
  */
 @SuppressWarnings("WeakerAccess")
-public class ResearchTree {
-    final Map<String, ResearchProject> researchProjects = new HashMap<>();
+public class ResearchTree implements Serializable {
+    @SuppressWarnings("unused")
+    private static final long serialVersionUID = 2016082400L;
+
+    private final Map<String, ResearchProject> sResearchProjects = new HashMap<>();
+    private transient final Set<OnResearchTreeChangeListener> sListeners = new HashSet<>();
 
     public ResearchTree() {
     }
 
     public static ResearchTree loadXmlResearchTree(XmlPullParser parser) throws IOException {
-        final int STATE_START = 0;
-        final int STATE_SUCCESS = 1;
-        final int STATE_ERROR = 2;
-        //final int STATE_DOCUMENT = 3;
-        final int STATE_RESEARCH_TREE = 4;
-        final int STATE_RESEARCH_PROJECT = 5;
-        final int STATE_REQUIREMENTS = 6;
-        final int STATE_REQUIRES = 7;
-        final int STATE_TECHNOLOGIES = 8;
-        final int STATE_TECHNOLOGY = 9;
-
-        final int TAG_START_DOCUMENT = 1;
-        final int TAG_END_DOCUMENT = 2;
-        final int TAG_START_RESEARCH_TREE = "researchtree".hashCode();
-        final int TAG_END_RESEARCH_TREE = TAG_START_RESEARCH_TREE + 1;
-        final int TAG_START_RESEARCH_PROJECT = "researchproject".hashCode();
-        final int TAG_END_RESEARCH_PROJECT = TAG_START_RESEARCH_PROJECT + 1;
-        final int TAG_START_REQUIREMENTS = "requirements".hashCode();
-        final int TAG_END_REQUIREMENTS = TAG_START_REQUIREMENTS + 1;
-        final int TAG_START_REQUIRES = "requires".hashCode();
-        final int TAG_END_REQUIRES = TAG_START_REQUIRES + 1;
-        final int TAG_START_TECHNOLOGIES = "technologies".hashCode();
-        final int TAG_END_TECHNOLOGIES = TAG_START_TECHNOLOGIES + 1;
-        final int TAG_START_TECHNOLOGY = "technology".hashCode();
-        final int TAG_END_TECHNOLOGY = TAG_START_TECHNOLOGY + 1;
-
-        int nextState = STATE_START, state;
         ResearchProject project = null;
         ResearchTree tree = new ResearchTree();
-        int tag;
+        ResearchTreeXmlParser researchTreeXmlParser = new ResearchTreeXmlParser(parser);
 
-        while (nextState != STATE_ERROR && nextState != STATE_SUCCESS) {
-            state = nextState;
-            nextState = STATE_ERROR;
-            try {
-                tag = parser.next();
-                String name = null;
-                if (tag == XmlPullParser.TEXT) {
-                    nextState = state;
-                    continue;
-                }
-                switch (tag) {
-                    case XmlPullParser.START_DOCUMENT:
-                        tag = TAG_START_DOCUMENT;
-                        break;
-                    case XmlPullParser.END_DOCUMENT:
-                        tag = TAG_END_DOCUMENT;
-                        break;
-                    case XmlPullParser.START_TAG:
-                        tag = parser.getName().toLowerCase().hashCode();
-                        name = parser.getAttributeValue(null, "name");
-                        break;
-                    case XmlPullParser.END_TAG:
-                        tag = parser.getName().toLowerCase().hashCode() + 1;
-                        break;
-                    default:
-                        tag = 0;
-                }
-                switch (state) {
-                    case STATE_START:
-                        if (tag == TAG_END_DOCUMENT) {
-                            nextState = STATE_SUCCESS;
-                        } else if (tag == TAG_START_RESEARCH_TREE) {
-                            nextState = STATE_RESEARCH_TREE;
+        try {
+            int event = researchTreeXmlParser.next();
+            while (event != ResearchTreeXmlParser.DONE) {
+                switch (event) {
+                    case ResearchTreeXmlParser.RESEARCH_PROJECT:
+                        project = tree.getResearchProject(researchTreeXmlParser.getName());
+                        if (project == null) {
+                            project = new ResearchProject(researchTreeXmlParser.getName());
+                            tree.addResearchProject(project);
                         }
                         break;
-                    case STATE_RESEARCH_TREE:
-                        if (tag == TAG_END_RESEARCH_TREE) {
-                            nextState = STATE_START;
-                        } else if (tag == TAG_START_RESEARCH_PROJECT) {
-                            nextState = STATE_RESEARCH_PROJECT;
-                            project = tree.researchProjects.get(name);
-                            if (project == null) {
-                                project = new ResearchProject(name);
-                                tree.addResearchProject(project);
-                            }
+                    case ResearchTreeXmlParser.DEPENDENCY:
+                        ResearchProject dependency = tree.getResearchProject(researchTreeXmlParser.getName());
+                        if (dependency == null) {
+                            dependency = new ResearchProject(researchTreeXmlParser.getName());
+                            tree.addResearchProject(dependency);
                         }
+                        //noinspection ConstantConditions
+                        assert project != null;
+                        project.addDependency(dependency);
                         break;
-                    case STATE_RESEARCH_PROJECT:
-                        if (tag == TAG_END_RESEARCH_PROJECT) {
-                            nextState = STATE_RESEARCH_TREE;
-                        } else if (tag == TAG_START_REQUIREMENTS) {
-                            nextState = STATE_REQUIREMENTS;
-                        } else if (tag == TAG_START_TECHNOLOGIES) {
-                            nextState = STATE_TECHNOLOGIES;
-                        }
-                        break;
-                    case STATE_REQUIREMENTS:
-                        if (tag == TAG_END_REQUIREMENTS) {
-                            nextState = STATE_RESEARCH_PROJECT;
-                        } else if (tag == TAG_START_REQUIRES) {
-                            nextState = STATE_REQUIRES;
-                            ResearchProject dependency = tree.researchProjects.get(name);
-                            if (dependency == null) {
-                                dependency = new ResearchProject(name);
-                                tree.researchProjects.put(name, dependency);
-                            }
-                            project.addDependency(dependency);
-                        }
-                        break;
-                    case STATE_REQUIRES:
-                        if (tag == TAG_END_REQUIRES) {
-                            nextState = STATE_REQUIREMENTS;
-                        }
-                        break;
-                    case STATE_TECHNOLOGIES:
-                        if (tag == TAG_END_TECHNOLOGIES) {
-                            nextState = STATE_RESEARCH_PROJECT;
-                        } else if (tag == TAG_START_TECHNOLOGY) {
-                            nextState = STATE_TECHNOLOGY;
-                            project.addTechnology(name);
-                        }
-                        break;
-                    case STATE_TECHNOLOGY:
-                        if (tag == TAG_END_TECHNOLOGY) {
-                            nextState = STATE_TECHNOLOGIES;
-                        }
+                    case ResearchTreeXmlParser.TECHNOLOGY:
+                        //noinspection ConstantConditions
+                        assert project != null;
+                        project.addTechnology(researchTreeXmlParser.getName());
                         break;
                 }
-            } catch (XmlPullParserException | IOException e) {
-                nextState = STATE_ERROR;
             }
+            return tree;
+        } catch (XmlPullParserException e) {
+            for (ResearchProject proj : tree.getResearchProjects()) {
+                tree.removeResearchProject(proj);
+                for (Iterator<ResearchProject> di = proj.getDependencies(); di.hasNext(); ) {
+                    proj.removeDependency(di.next());
+                }
+            }
+            throw new IOException(e.getMessage());
         }
-        if (nextState != STATE_SUCCESS) {
-            throw new IOException("Invalid XML research tree");
-        }
-        return tree;
     }
 
     public ResearchProject getResearchProject(String name) {
-        return researchProjects.get(name);
+        return sResearchProjects.get(name);
     }
 
     public void addResearchProject(ResearchProject project) {
-        researchProjects.put(project.getName(), project);
+        sResearchProjects.put(project.getName(), project);
+        this.triggerResearchProjectAdded(project);
     }
 
+    @SuppressWarnings("unused")
     public void removeResearchProject(ResearchProject project) {
-        researchProjects.remove(project.getName());
+        sResearchProjects.remove(project.getName());
+        this.triggerResearchProjectRemoved(project);
     }
 
     public Collection<ResearchProject> getResearchProjects() {
-        return researchProjects.values();
+        return sResearchProjects.values();
+    }
+
+    public void addResearchTreeChangeListener(OnResearchTreeChangeListener listener) {
+        this.sListeners.add(listener);
+    }
+
+    @SuppressWarnings("unused")
+    public void removeResearchTreeChangeListener(OnResearchTreeChangeListener listener) {
+        this.sListeners.remove(listener);
+    }
+
+    private void triggerResearchProjectAdded(ResearchProject project) {
+        for (OnResearchTreeChangeListener listener : sListeners) {
+            listener.onResearchProjectAdded(this, project);
+        }
+    }
+
+    private void triggerResearchProjectRemoved(ResearchProject project) {
+        for (OnResearchTreeChangeListener listener : sListeners) {
+            listener.onResearchProjectRemoved(this, project);
+        }
+    }
+
+    public String toString() {
+        return "ResearchTree[" + this.sResearchProjects.size() + " projects]";
+    }
+
+    public interface OnResearchTreeChangeListener {
+        void onResearchProjectAdded(ResearchTree researchTree, ResearchProject project);
+
+        void onResearchProjectRemoved(ResearchTree researchTree, ResearchProject project);
+    }
+
+    private static class ResearchTreeXmlParser {
+        public static final int DONE = 0;
+        public static final int RESEARCH_PROJECT = 1;
+        public static final int DEPENDENCY = 2;
+        public static final int TECHNOLOGY = 3;
+
+        private static final int TAG_START_DOCUMENT = 1;
+        private static final int TAG_END_DOCUMENT = 2;
+        private static final int TAG_START_RESEARCH_TREE = "researchtree".hashCode();
+        private static final int TAG_END_RESEARCH_TREE = TAG_START_RESEARCH_TREE + 1;
+        private static final int TAG_START_RESEARCH_PROJECT = "researchproject".hashCode();
+        private static final int TAG_END_RESEARCH_PROJECT = TAG_START_RESEARCH_PROJECT + 1;
+        private static final int TAG_START_REQUIREMENTS = "requirements".hashCode();
+        private static final int TAG_END_REQUIREMENTS = TAG_START_REQUIREMENTS + 1;
+        private static final int TAG_START_REQUIRES = "requires".hashCode();
+        private static final int TAG_END_REQUIRES = TAG_START_REQUIRES + 1;
+        private static final int TAG_START_TECHNOLOGIES = "technologies".hashCode();
+        private static final int TAG_END_TECHNOLOGIES = TAG_START_TECHNOLOGIES + 1;
+        private static final int TAG_START_TECHNOLOGY = "technology".hashCode();
+        private static final int TAG_END_TECHNOLOGY = TAG_START_TECHNOLOGY + 1;
+
+        private final int STATE_START = 0;
+        private final int STATE_SUCCESS = 1;
+        private final int STATE_ERROR = 2;
+        //private final int STATE_DOCUMENT = 3;
+        private final int STATE_RESEARCH_TREE = 4;
+        private final int STATE_RESEARCH_PROJECT = 5;
+        private final int STATE_REQUIREMENTS = 6;
+        private final int STATE_REQUIRES = 7;
+        private final int STATE_TECHNOLOGIES = 8;
+        private final int STATE_TECHNOLOGY = 9;
+
+        private final XmlPullParser sParser;
+        private String mName;
+
+        private int mCurrentState, mNextState;
+
+
+        public ResearchTreeXmlParser(XmlPullParser parser) {
+            this.sParser = parser;
+            mCurrentState = mNextState = STATE_START;
+        }
+
+        public String getName() {
+            return mName;
+        }
+
+        public int next() throws XmlPullParserException {
+            try {
+                while (mCurrentState != STATE_SUCCESS && mCurrentState != STATE_ERROR) {
+                    mCurrentState = mNextState;
+                    mNextState = STATE_ERROR;
+                    mName = null;
+                    int tag = sParser.next();
+                    while (tag == XmlPullParser.TEXT) {
+                        tag = sParser.next();
+                    }
+                    switch (tag) {
+                        case XmlPullParser.START_DOCUMENT:
+                            tag = TAG_START_DOCUMENT;
+                            break;
+                        case XmlPullParser.END_DOCUMENT:
+                            tag = TAG_END_DOCUMENT;
+                            break;
+                        case XmlPullParser.START_TAG:
+                            tag = sParser.getName().toLowerCase().hashCode();
+                            mName = sParser.getAttributeValue(null, "name");
+                            break;
+                        case XmlPullParser.END_TAG:
+                            tag = sParser.getName().toLowerCase().hashCode() + 1;
+                            break;
+                        default:
+                            tag = 0;
+                    }
+
+                    switch (mCurrentState) {
+                        case STATE_START:
+                            if (tag == ResearchTreeXmlParser.TAG_START_DOCUMENT) {
+                                mNextState = STATE_START;
+                            } else if (tag == ResearchTreeXmlParser.TAG_END_DOCUMENT) {
+                                return DONE;
+                            } else if (tag == ResearchTreeXmlParser.TAG_START_RESEARCH_TREE) {
+                                mNextState = STATE_RESEARCH_TREE;
+                            }
+                            break;
+                        case STATE_RESEARCH_TREE:
+                            if (tag == ResearchTreeXmlParser.TAG_END_RESEARCH_TREE) {
+                                mNextState = STATE_START;
+                            } else if (tag == ResearchTreeXmlParser.TAG_START_RESEARCH_PROJECT) {
+                                mNextState = STATE_RESEARCH_PROJECT;
+                                return RESEARCH_PROJECT;
+                            }
+                            break;
+                        case STATE_RESEARCH_PROJECT:
+                            if (tag == ResearchTreeXmlParser.TAG_END_RESEARCH_PROJECT) {
+                                mNextState = STATE_RESEARCH_TREE;
+                            } else if (tag == ResearchTreeXmlParser.TAG_START_REQUIREMENTS) {
+                                mNextState = STATE_REQUIREMENTS;
+                            } else if (tag == ResearchTreeXmlParser.TAG_START_TECHNOLOGIES) {
+                                mNextState = STATE_TECHNOLOGIES;
+                            }
+                            break;
+                        case STATE_REQUIREMENTS:
+                            if (tag == ResearchTreeXmlParser.TAG_END_REQUIREMENTS) {
+                                mNextState = STATE_RESEARCH_PROJECT;
+                            } else if (tag == ResearchTreeXmlParser.TAG_START_REQUIRES) {
+                                mNextState = STATE_REQUIRES;
+                                return DEPENDENCY;
+                            }
+                            break;
+                        case STATE_REQUIRES:
+                            if (tag == ResearchTreeXmlParser.TAG_END_REQUIRES) {
+                                mNextState = STATE_REQUIREMENTS;
+                            }
+                            break;
+                        case STATE_TECHNOLOGIES:
+                            if (tag == ResearchTreeXmlParser.TAG_END_TECHNOLOGIES) {
+                                mNextState = STATE_RESEARCH_PROJECT;
+                            } else if (tag == ResearchTreeXmlParser.TAG_START_TECHNOLOGY) {
+                                mNextState = STATE_TECHNOLOGY;
+                                return TECHNOLOGY;
+                            }
+                            break;
+                        case STATE_TECHNOLOGY:
+                            if (tag == ResearchTreeXmlParser.TAG_END_TECHNOLOGY) {
+                                mNextState = STATE_TECHNOLOGIES;
+                            }
+                            break;
+                    }
+
+                }
+            } catch (XmlPullParserException | IOException e) {
+                mNextState = STATE_ERROR;
+            }
+            throw new XmlPullParserException("Invalid XML Research Tree");
+        }
     }
 
 }
+

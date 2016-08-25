@@ -1,24 +1,23 @@
 package com.github.jearls.ascendancyassistant;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
-
 import org.junit.Test;
-
-import org.xmlpull.v1.*;
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.util.Iterator;
 
-@SuppressWarnings("WeakerAccess")
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
+
 public class ResearchTreeTest {
 
 ////////////////////////////////////////////////////////////////////////
 
-    public void assertTreeHasProjectCount(ResearchTree tree, int count) {
+    private void assertTreeHasProjectCount(ResearchTree tree, int count) {
         Iterator<ResearchProject> pi = tree.getResearchProjects().iterator();
         int found = 0;
         while (pi.hasNext()) {
@@ -28,11 +27,11 @@ public class ResearchTreeTest {
         assertEquals("Expected " + count + " research projects, found " + found, count, found);
     }
 
-    public void assertTreeHasProjectNamed(ResearchTree tree, String project) {
+    private void assertTreeHasProjectNamed(ResearchTree tree, String project) {
         assertNotNull("Expected to find research project " + project, tree.getResearchProject(project));
     }
 
-    public void assertNamedProjectHasDependencyCount(ResearchTree tree, String project, int count) {
+    private void assertNamedProjectHasDependencyCount(ResearchTree tree, String project, int count) {
         assertTreeHasProjectNamed(tree, project);
         Iterator<ResearchProject> pi = tree.getResearchProject(project).getDependencies();
         int found = 0;
@@ -40,16 +39,16 @@ public class ResearchTreeTest {
             found += 1;
             pi.next();
         }
-        assertEquals("Expected " + count + " dependencies, found " + found, count, found);
+        assertEquals("Expected " + count + " sDependencies, found " + found, count, found);
     }
 
-    public void assertNamedProjectHasDependencyNamed(ResearchTree tree, String project, String dep) {
+    private void assertNamedProjectHasDependencyNamed(ResearchTree tree, String project, String dep) {
         assertTreeHasProjectNamed(tree, project);
         assertTreeHasProjectNamed(tree, dep);
         assertNotNull("Expected to find dependency " + dep, tree.getResearchProject(project).hasDependency(tree.getResearchProject(dep)));
     }
 
-    public void assertNamedProjectHasTechnologyCount(ResearchTree tree, String project, int count) {
+    private void assertNamedProjectHasTechnologyCount(ResearchTree tree, String project, int count) {
         assertTreeHasProjectNamed(tree, project);
         Iterator<String> pi = tree.getResearchProject(project).getTechnologies();
         int found = 0;
@@ -57,19 +56,19 @@ public class ResearchTreeTest {
             found += 1;
             pi.next();
         }
-        assertEquals("Expected " + count + " dependencies, found " + found, count, found);
+        assertEquals("Expected " + count + " sDependencies, found " + found, count, found);
     }
 
-    public void assertNamedProjectHasTechnologyNamed(ResearchTree tree, String project, String tech) {
+    private void assertNamedProjectHasTechnologyNamed(ResearchTree tree, String project, String tech) {
         assertTreeHasProjectNamed(tree, project);
         assertNotNull("Expected to find technology " + tech, tree.getResearchProject(project).hasTechnology(tech));
     }
 
     @Test
     public void testEmptyResearchTree() {
-        DummyXMLEvents[] events = {
-                new DummyXMLStartEndTag("ResearchTree", new DummyXMLAttribute[]{}),
-                new DummyXMLEndDocument(),
+        DummyXmlEvent[] events = {
+                new DummyXmlStartEndTag("ResearchTree", new DummyXmlAttribute[]{}),
+                new DummyXmlEndDocument(),
         };
         XmlPullParser xpp = new DummyXmlPullParser(events);
         try {
@@ -82,11 +81,11 @@ public class ResearchTreeTest {
 
     @Test
     public void testTextContent() {
-        DummyXMLEvents[] events = {
-                new DummyXMLStartTag("ResearchTree", new DummyXMLAttribute[]{}),
-                new DummyXMLText("This is some text"),
-                new DummyXMLEndTag(),
-                new DummyXMLEndDocument(),
+        DummyXmlEvent[] events = {
+                new DummyXmlStartTag("ResearchTree", new DummyXmlAttribute[]{}),
+                new DummyXmlText("This is some text"),
+                new DummyXmlEndTag(),
+                new DummyXmlEndDocument(),
         };
         try {
             XmlPullParser xpp = new DummyXmlPullParser(events);
@@ -102,11 +101,11 @@ public class ResearchTreeTest {
 
     @Test
     public void testSingleResearchProject() {
-        DummyXMLEvents[] events = {
-                new DummyXMLStartTag("ResearchTree", new DummyXMLAttribute[]{}),
-                new DummyXMLStartEndTag("ResearchProject", new DummyXMLAttribute[]{new DummyXMLAttribute("name", "project")}),
-                new DummyXMLEndTag(),
-                new DummyXMLEndDocument(),
+        DummyXmlEvent[] events = {
+                new DummyXmlStartTag("ResearchTree", new DummyXmlAttribute[]{}),
+                new DummyXmlStartEndTag("ResearchProject", new DummyXmlAttribute[]{new DummyXmlAttribute("sName", "project")}),
+                new DummyXmlEndTag(),
+                new DummyXmlEndDocument(),
         };
         try {
             XmlPullParser xpp = new DummyXmlPullParser(events);
@@ -122,15 +121,15 @@ public class ResearchTreeTest {
 
     @Test
     public void testResearchProjectTechnology() {
-        DummyXMLEvents[] events = {
-                new DummyXMLStartTag("ResearchTree", new DummyXMLAttribute[]{}),
-                new DummyXMLStartTag("ResearchProject", new DummyXMLAttribute[]{new DummyXMLAttribute("name", "project")}),
-                new DummyXMLStartTag("Technologies", new DummyXMLAttribute[]{}),
-                new DummyXMLStartEndTag("Technology", new DummyXMLAttribute[]{new DummyXMLAttribute("name", "tech")}),
-                new DummyXMLEndTag(),
-                new DummyXMLEndTag(),
-                new DummyXMLEndTag(),
-                new DummyXMLEndDocument(),
+        DummyXmlEvent[] events = {
+                new DummyXmlStartTag("ResearchTree", new DummyXmlAttribute[]{}),
+                new DummyXmlStartTag("ResearchProject", new DummyXmlAttribute[]{new DummyXmlAttribute("sName", "project")}),
+                new DummyXmlStartTag("Technologies", new DummyXmlAttribute[]{}),
+                new DummyXmlStartEndTag("Technology", new DummyXmlAttribute[]{new DummyXmlAttribute("sName", "tech")}),
+                new DummyXmlEndTag(),
+                new DummyXmlEndTag(),
+                new DummyXmlEndTag(),
+                new DummyXmlEndDocument(),
         };
         try {
             XmlPullParser xpp = new DummyXmlPullParser(events);
@@ -147,16 +146,16 @@ public class ResearchTreeTest {
 
     @Test
     public void testResearchProjectDependency() {
-        DummyXMLEvents[] events = {
-                new DummyXMLStartTag("ResearchTree", new DummyXMLAttribute[]{}),
-                new DummyXMLStartEndTag("ResearchProject", new DummyXMLAttribute[]{new DummyXMLAttribute("name", "project")}),
-                new DummyXMLStartTag("ResearchProject", new DummyXMLAttribute[]{new DummyXMLAttribute("name", "project 2")}),
-                new DummyXMLStartTag("Requirements", new DummyXMLAttribute[]{}),
-                new DummyXMLStartEndTag("Requires", new DummyXMLAttribute[]{new DummyXMLAttribute("name", "project")}),
-                new DummyXMLEndTag(),
-                new DummyXMLEndTag(),
-                new DummyXMLEndTag(),
-                new DummyXMLEndDocument(),
+        DummyXmlEvent[] events = {
+                new DummyXmlStartTag("ResearchTree", new DummyXmlAttribute[]{}),
+                new DummyXmlStartEndTag("ResearchProject", new DummyXmlAttribute[]{new DummyXmlAttribute("sName", "project")}),
+                new DummyXmlStartTag("ResearchProject", new DummyXmlAttribute[]{new DummyXmlAttribute("sName", "project 2")}),
+                new DummyXmlStartTag("Requirements", new DummyXmlAttribute[]{}),
+                new DummyXmlStartEndTag("Requires", new DummyXmlAttribute[]{new DummyXmlAttribute("sName", "project")}),
+                new DummyXmlEndTag(),
+                new DummyXmlEndTag(),
+                new DummyXmlEndTag(),
+                new DummyXmlEndDocument(),
         };
         try {
             XmlPullParser xpp = new DummyXmlPullParser(events);
@@ -176,36 +175,36 @@ public class ResearchTreeTest {
 
     @Test
     public void testComplexResearchProjectDependencies() {
-        DummyXMLEvents[] events = {
-                new DummyXMLStartTag("ResearchTree", new DummyXMLAttribute[]{}),
-                new DummyXMLStartEndTag("ResearchProject", new DummyXMLAttribute[]{new DummyXMLAttribute("name", "p1")}),
-                new DummyXMLStartTag("ResearchProject", new DummyXMLAttribute[]{new DummyXMLAttribute("name", "p2")}),
-                new DummyXMLStartTag("Requirements", new DummyXMLAttribute[]{}),
-                new DummyXMLStartEndTag("Requires", new DummyXMLAttribute[]{new DummyXMLAttribute("name", "p1")}),
-                new DummyXMLEndTag(),
-                new DummyXMLStartTag("Technologies", new DummyXMLAttribute[]{}),
-                new DummyXMLStartEndTag("Technology", new DummyXMLAttribute[]{new DummyXMLAttribute("name", "tech2")}),
-                new DummyXMLEndTag(),
-                new DummyXMLEndTag(),
-                new DummyXMLStartTag("ResearchProject", new DummyXMLAttribute[]{new DummyXMLAttribute("name", "p3")}),
-                new DummyXMLStartTag("Requirements", new DummyXMLAttribute[]{}),
-                new DummyXMLStartEndTag("Requires", new DummyXMLAttribute[]{new DummyXMLAttribute("name", "p1")}),
-                new DummyXMLEndTag(),
-                new DummyXMLStartTag("Technologies", new DummyXMLAttribute[]{}),
-                new DummyXMLStartEndTag("Technology", new DummyXMLAttribute[]{new DummyXMLAttribute("name", "tech3")}),
-                new DummyXMLEndTag(),
-                new DummyXMLEndTag(),
-                new DummyXMLStartTag("ResearchProject", new DummyXMLAttribute[]{new DummyXMLAttribute("name", "p4")}),
-                new DummyXMLStartTag("Requirements", new DummyXMLAttribute[]{}),
-                new DummyXMLStartEndTag("Requires", new DummyXMLAttribute[]{new DummyXMLAttribute("name", "p2")}),
-                new DummyXMLStartEndTag("Requires", new DummyXMLAttribute[]{new DummyXMLAttribute("name", "p3")}),
-                new DummyXMLEndTag(),
-                new DummyXMLStartTag("Technologies", new DummyXMLAttribute[]{}),
-                new DummyXMLStartEndTag("Technology", new DummyXMLAttribute[]{new DummyXMLAttribute("name", "tech4")}),
-                new DummyXMLEndTag(),
-                new DummyXMLEndTag(),
-                new DummyXMLEndTag(),
-                new DummyXMLEndDocument(),
+        DummyXmlEvent[] events = {
+                new DummyXmlStartTag("ResearchTree", new DummyXmlAttribute[]{}),
+                new DummyXmlStartEndTag("ResearchProject", new DummyXmlAttribute[]{new DummyXmlAttribute("sName", "p1")}),
+                new DummyXmlStartTag("ResearchProject", new DummyXmlAttribute[]{new DummyXmlAttribute("sName", "p2")}),
+                new DummyXmlStartTag("Requirements", new DummyXmlAttribute[]{}),
+                new DummyXmlStartEndTag("Requires", new DummyXmlAttribute[]{new DummyXmlAttribute("sName", "p1")}),
+                new DummyXmlEndTag(),
+                new DummyXmlStartTag("Technologies", new DummyXmlAttribute[]{}),
+                new DummyXmlStartEndTag("Technology", new DummyXmlAttribute[]{new DummyXmlAttribute("sName", "tech2")}),
+                new DummyXmlEndTag(),
+                new DummyXmlEndTag(),
+                new DummyXmlStartTag("ResearchProject", new DummyXmlAttribute[]{new DummyXmlAttribute("sName", "p3")}),
+                new DummyXmlStartTag("Requirements", new DummyXmlAttribute[]{}),
+                new DummyXmlStartEndTag("Requires", new DummyXmlAttribute[]{new DummyXmlAttribute("sName", "p1")}),
+                new DummyXmlEndTag(),
+                new DummyXmlStartTag("Technologies", new DummyXmlAttribute[]{}),
+                new DummyXmlStartEndTag("Technology", new DummyXmlAttribute[]{new DummyXmlAttribute("sName", "tech3")}),
+                new DummyXmlEndTag(),
+                new DummyXmlEndTag(),
+                new DummyXmlStartTag("ResearchProject", new DummyXmlAttribute[]{new DummyXmlAttribute("sName", "p4")}),
+                new DummyXmlStartTag("Requirements", new DummyXmlAttribute[]{}),
+                new DummyXmlStartEndTag("Requires", new DummyXmlAttribute[]{new DummyXmlAttribute("sName", "p2")}),
+                new DummyXmlStartEndTag("Requires", new DummyXmlAttribute[]{new DummyXmlAttribute("sName", "p3")}),
+                new DummyXmlEndTag(),
+                new DummyXmlStartTag("Technologies", new DummyXmlAttribute[]{}),
+                new DummyXmlStartEndTag("Technology", new DummyXmlAttribute[]{new DummyXmlAttribute("sName", "tech4")}),
+                new DummyXmlEndTag(),
+                new DummyXmlEndTag(),
+                new DummyXmlEndTag(),
+                new DummyXmlEndDocument(),
         };
         try {
             XmlPullParser xpp = new DummyXmlPullParser(events);
@@ -236,75 +235,75 @@ public class ResearchTreeTest {
 
     }
 
-    class DummyXMLAttribute {
+    class DummyXmlAttribute {
         public final String name;
         public final String value;
 
         @SuppressWarnings("SameParameterValue")
-        public DummyXMLAttribute(String name, String value) {
+        public DummyXmlAttribute(String name, String value) {
             this.name = name;
             this.value = value;
         }
     }
 
-    class DummyXMLEvents {
+    class DummyXmlEvent {
         public final int event;
         public final boolean isEmpty;
         public final String elementName;
         public final String textContent;
-        public final DummyXMLAttribute[] attributes;
+        public final DummyXmlAttribute[] attributes;
 
-        public DummyXMLEvents(int event, boolean isEmpty, String elementName, String textContent, DummyXMLAttribute[] attributes) {
+        public DummyXmlEvent(int event, boolean isEmpty, String elementName, String textContent, DummyXmlAttribute[] attributes) {
             this.event = event;
             this.isEmpty = isEmpty;
             this.elementName = elementName;
             this.textContent = textContent;
             if (attributes == null) {
-                this.attributes = new DummyXMLAttribute[0];
+                this.attributes = new DummyXmlAttribute[0];
             } else {
                 this.attributes = attributes;
             }
         }
     }
 
-    class DummyXMLStartTag extends DummyXMLEvents {
-        public DummyXMLStartTag(String elementName, DummyXMLAttribute[] attributes) {
+    class DummyXmlStartTag extends DummyXmlEvent {
+        public DummyXmlStartTag(String elementName, DummyXmlAttribute[] attributes) {
             super(XmlPullParser.START_TAG, false, elementName, null, attributes);
         }
     }
 
-    class DummyXMLStartEndTag extends DummyXMLEvents {
-        public DummyXMLStartEndTag(String elementName, DummyXMLAttribute[] attributes) {
+    class DummyXmlStartEndTag extends DummyXmlEvent {
+        public DummyXmlStartEndTag(String elementName, DummyXmlAttribute[] attributes) {
             super(XmlPullParser.START_TAG, true, elementName, null, attributes);
         }
     }
 
-    class DummyXMLEndTag extends DummyXMLEvents {
-        public DummyXMLEndTag() {
+    class DummyXmlEndTag extends DummyXmlEvent {
+        public DummyXmlEndTag() {
             super(XmlPullParser.END_TAG, false, null, null, null);
         }
     }
 
-    class DummyXMLText extends DummyXMLEvents {
+    class DummyXmlText extends DummyXmlEvent {
         @SuppressWarnings("SameParameterValue")
-        public DummyXMLText(String text) {
+        public DummyXmlText(String text) {
             super(XmlPullParser.TEXT, false, null, text, null);
         }
     }
 
-    class DummyXMLEndDocument extends DummyXMLEvents {
-        public DummyXMLEndDocument() {
+    class DummyXmlEndDocument extends DummyXmlEvent {
+        public DummyXmlEndDocument() {
             super(XmlPullParser.END_DOCUMENT, false, null, null, null);
         }
     }
 
     class DummyXmlPullParser implements XmlPullParser {
 
-        DummyXMLEvents[] events;
+        DummyXmlEvent[] events;
         int index;
         int depth;
 
-        public DummyXmlPullParser(DummyXMLEvents[] events) {
+        public DummyXmlPullParser(DummyXmlEvent[] events) {
             try {
                 this.events = events;
                 this.setInput(null);
