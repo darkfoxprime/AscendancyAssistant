@@ -13,6 +13,7 @@ import android.widget.Toast;
 
 public class AssistantActivity extends AppCompatActivity implements ResearchListFragment.OnResearchListFragmentInteractionListener {
     private static final boolean DEBUG = false;
+
     /**
      * The {@link android.support.v4.view.PagerAdapter} that will
      * provide fragments for each of the sections. We use a {@link
@@ -28,16 +29,16 @@ public class AssistantActivity extends AppCompatActivity implements ResearchList
     @SuppressWarnings("FieldCanBeLocal")
     private ViewPager mViewPager;
 
-    private static void debug(String tag, String msg) {
-        System.err.println(tag + ": " + msg);
-        Log.d(tag, msg);
+    private static void debug(String msg) {
+        System.err.println("AssistantActivity: " + msg);
+        Log.d("AssistantActivity", msg);
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (DEBUG)
-            debug("AssistantActivity", "> onCreate(" + savedInstanceState + ")");
+            debug("> onCreate(" + savedInstanceState + ")");
         setContentView(R.layout.activity_assistant);
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -51,17 +52,17 @@ public class AssistantActivity extends AppCompatActivity implements ResearchList
         mViewPager.setAdapter(mSectionsPagerAdapter);
 
         if (DEBUG)
-            debug("AssistantActivity", "< onCreate(" + savedInstanceState + ")");
+            debug("< onCreate(" + savedInstanceState + ")");
     }
 
     @Override
     public void onResearchListFragmentInteraction(Uri uri) {
         if (DEBUG)
-            debug("AssistantActivity", "> onResearchListFragmentInteraction(" + uri + ")");
+            debug("> onResearchListFragmentInteraction(" + uri + ")");
         Toast toast = Toast.makeText(this, uri.toString(), Toast.LENGTH_SHORT);
         toast.show();
         if (DEBUG)
-            debug("AssistantActivity", "< onResearchListFragmentInteraction(" + uri + ")");
+            debug("< onResearchListFragmentInteraction(" + uri + ")");
     }
 
     /**
@@ -77,38 +78,38 @@ public class AssistantActivity extends AppCompatActivity implements ResearchList
         @Override
         public Fragment getItem(int position) {
             if (DEBUG)
-                debug("AssistantActivity", "> SectionsPagerAdapter.getItem(" + position + ")");
+                debug("> SectionsPagerAdapter.getItem(" + position + ")");
             switch (position) {
                 case 0:
                     if (DEBUG)
-                        debug("AssistantActivity", "< SectionsPagerAdapter.getItem(" + position + ") returning a new ResearchListFragment instance");
+                        debug("< SectionsPagerAdapter.getItem(" + position + ") returning a new ResearchListFragment instance");
                     return ResearchListFragment.newInstance();
             }
             if (DEBUG)
-                debug("AssistantActivity", "< SectionsPagerAdapter.getItem(" + position + ") returning null");
+                debug("< SectionsPagerAdapter.getItem(" + position + ") returning null");
             return null;
         }
 
         @Override
         public int getCount() {
             if (DEBUG)
-                debug("AssistantActivity", "> SectionsPagerAdapter.getCount()");
+                debug("> SectionsPagerAdapter.getCount()");
             if (DEBUG)
-                debug("AssistantActivity", "< SectionsPagerAdapter.getCount() returning 1");
+                debug("< SectionsPagerAdapter.getCount() returning 1");
             return 1;
         }
 
         @Override
         public CharSequence getPageTitle(int position) {
             if (DEBUG)
-                debug("AssistantActivity", "> SectionsPagerAdapter.getPageTitle(" + position + ")");
+                debug("> SectionsPagerAdapter.getPageTitle(" + position + ")");
             CharSequence title = null;
             switch (position) {
                 case 0:
                     title = "Research";
             }
             if (DEBUG)
-                debug("AssistantActivity", "< SectionsPagerAdapter.getPageTitle(" + position + ") returning " + title);
+                debug("< SectionsPagerAdapter.getPageTitle(" + position + ") returning " + title);
             return title;
         }
     }

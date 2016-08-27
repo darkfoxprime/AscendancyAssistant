@@ -23,7 +23,7 @@ import java.util.Set;
  *
  * @author Johnson Earls
  */
-public class ResearchListAdapter extends BaseAdapter implements ResearchProject.OnProjectStatusChangeListener, ResearchTree.OnResearchTreeChangeListener {
+public class ResearchListAdapter extends BaseAdapter implements ResearchProject.OnResearchStatusChangeListener, ResearchProject.OnResearchChangeListener {
     private static final boolean DEBUG = false;
     @SuppressWarnings("WeakerAccess")
     public final int SHOW_COMPLETED = 1;
@@ -33,60 +33,54 @@ public class ResearchListAdapter extends BaseAdapter implements ResearchProject.
     public final int SHOW_AVAILABLE = 3;
     @SuppressWarnings("WeakerAccess")
     public final int SHOW_RESEARCHING = 4;
-    private final ResearchTree sResearch;
     private final List<ResearchProject> sResearchOrder;
     private final Set<ResearchProject> sVisibleResearch;
     private final Context sContext;
     private final LayoutInflater sInflater;
     private int mMode;
-    public ResearchListAdapter(Activity topActivity, ResearchTree research) {
-        if (DEBUG)
-            debug("ResearchListAdapter", "> ResearchListAdapter(" + topActivity + ", " + research + ")");
-        this.sResearch = research;
+
+    public ResearchListAdapter(Activity topActivity) {
+        if (DEBUG) debug("> ResearchListAdapter(" + topActivity + ")");
         this.mMode = SHOW_ALL;
         this.sResearchOrder = new ArrayList<>();
         this.sVisibleResearch = new HashSet<>();
         this.sContext = topActivity;
         this.sInflater = (LayoutInflater) this.sContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        this.sResearch.addResearchTreeChangeListener(this);
-        for (ResearchProject project : research.getResearchProjects()) {
-            project.addProjectStatusChangeListener(this);
+        ResearchProject.addResearchChangeListener(this);
+        for (ResearchProject project : ResearchProject.getAllResearchProjects()) {
+            project.addResearchStatusChangeListener(this);
         }
         this.update();
-        if (DEBUG)
-            debug("ResearchListAdapter", "< ResearchListAdapter(" + topActivity + ", " + research + ")");
+
+        if (DEBUG) debug("< ResearchListAdapter(" + topActivity + ")");
     }
 
-    @SuppressWarnings("SameParameterValue")
-    private static void debug(String tag, String msg) {
-        System.err.println(tag + ": " + msg);
-        Log.d(tag, msg);
+    private static void debug(String msg) {
+        System.err.println("ResearchListAdapter: " + msg);
+        Log.d("ResearchListAdapter", msg);
     }
 
     @SuppressWarnings("unused")
     public int getMode() {
-        if (DEBUG) debug("ResearchListAdapter", "> getMode()");
-        if (DEBUG)
-            debug("ResearchListAdapter", "< getMode() returning " + mMode);
+        if (DEBUG) debug("> getMode()");
+        if (DEBUG) debug("< getMode() returning " + mMode);
         return mMode;
     }
 
     @SuppressWarnings("unused")
     public void setMode(int mode) {
-        if (DEBUG)
-            debug("ResearchListAdapter", "> setMode(" + mode + ")");
+        if (DEBUG) debug("> setMode(" + mode + ")");
         if (mode != this.mMode) {
             this.mMode = mode;
             this.update();
         }
-        if (DEBUG)
-            debug("ResearchListAdapter", "< setMode(" + mode + ")");
+        if (DEBUG) debug("< setMode(" + mode + ")");
     }
 
     private void update() {
-        if (DEBUG) debug("ResearchListAdapter", "> update()");
+        if (DEBUG) debug("> update()");
         boolean updated = false;
-        for (ResearchProject project : this.sResearch.getResearchProjects()) {
+        for (ResearchProject project : ResearchProject.getAllResearchProjects()) {
             boolean projectShouldBeDisplayed = (this.mMode == SHOW_ALL); // TODO: actually figure this out
             if (projectShouldBeDisplayed) {
                 if (!this.sVisibleResearch.contains(project)) {
@@ -120,170 +114,159 @@ public class ResearchListAdapter extends BaseAdapter implements ResearchProject.
             }
             this.notifyDataSetChanged();
         }
-        if (DEBUG) debug("ResearchListAdapter", "< update()");
+        if (DEBUG) debug("< update()");
     }
 
     // OnResearchTreeChangeListener methods
 
     @Override
-    public void onResearchProjectAdded(ResearchTree tree, ResearchProject project) {
-        if (DEBUG)
-            debug("ResearchListAdapter", "> onResearchProjectAdded(" + tree + ", " + project + ")");
-        project.addProjectStatusChangeListener(this);
+    public void onResearchProjectAdded(ResearchProject project) {
+        if (DEBUG) debug("> onResearchProjectAdded(" + project + ")");
+        project.addResearchStatusChangeListener(this);
         this.update();
-        if (DEBUG)
-            debug("ResearchListAdapter", "< onResearchProjectAdded(" + tree + ", " + project + ")");
+        if (DEBUG) debug("< onResearchProjectAdded(" + project + ")");
     }
 
     @Override
-    public void onResearchProjectRemoved(ResearchTree tree, ResearchProject project) {
-        if (DEBUG)
-            debug("ResearchListAdapter", "> onResearchProjectRemoved(" + tree + ", " + project + ")");
+    public void onResearchProjectRemoved(ResearchProject project) {
+        if (DEBUG) debug("> onResearchProjectRemoved(" + project + ")");
         this.update();
-        if (DEBUG)
-            debug("ResearchListAdapter", "< onResearchProjectRemoved(" + tree + ", " + project + ")");
+        if (DEBUG) debug("< onResearchProjectRemoved(" + project + ")");
     }
 
-    // OnProjectStatusChangeListener methods
+    // OnResearchStatusChangeListener methods
 
 
     @Override
     public void onCompletedChange(ResearchProject project, boolean completed) {
         if (DEBUG)
-            debug("ResearchListAdapter", "> onCompletedChange(" + project + ", " + completed + ")");
+            debug("> onCompletedChange(" + project + ", " + completed + ")");
         if (this.mMode != SHOW_ALL) {
             this.update();
         }
         if (DEBUG)
-            debug("ResearchListAdapter", "< onCompletedChange(" + project + ", " + completed + ")");
+            debug("< onCompletedChange(" + project + ", " + completed + ")");
     }
 
     @Override
     public void onGoalChange(ResearchProject project, boolean goal) {
         if (DEBUG)
-            debug("ResearchListAdapter", "> onGoalChange(" + project + ", " + goal + ")");
+            debug("> onGoalChange(" + project + ", " + goal + ")");
         if (this.mMode != SHOW_COMPLETED) {
             this.update();
         }
         if (DEBUG)
-            debug("ResearchListAdapter", "< onGoalChange(" + project + ", " + goal + ")");
+            debug("< onGoalChange(" + project + ", " + goal + ")");
     }
 
     @Override
     public void onInPathChange(ResearchProject project, boolean inPath) {
         if (DEBUG)
-            debug("ResearchListAdapter", "> onInPathChange(" + project + ", " + inPath + ")");
+            debug("> onInPathChange(" + project + ", " + inPath + ")");
         if (this.mMode != SHOW_COMPLETED) {
             this.update();
         }
         if (DEBUG)
-            debug("ResearchListAdapter", "< onInPathChange(" + project + ", " + inPath + ")");
+            debug("< onInPathChange(" + project + ", " + inPath + ")");
     }
 
     @Override
     public void onGoalNumberChange(ResearchProject project, int goalNumber) {
         if (DEBUG)
-            debug("ResearchListAdapter", "> onGoalNumberChange(" + project + ", " + goalNumber + ")");
+            debug("> onGoalNumberChange(" + project + ", " + goalNumber + ")");
         if (this.mMode == SHOW_RESEARCHING) {
             this.update();
         }
         if (DEBUG)
-            debug("ResearchListAdapter", "< onGoalNumberChange(" + project + ", " + goalNumber + ")");
+            debug("< onGoalNumberChange(" + project + ", " + goalNumber + ")");
     }
 
     @Override
     public void onPathNumberChange(ResearchProject project, int pathNumber) {
         if (DEBUG)
-            debug("ResearchListAdapter", "> onPathNumberChange(" + project + ", " + pathNumber + ")");
+            debug("> onPathNumberChange(" + project + ", " + pathNumber + ")");
         if (this.mMode == SHOW_RESEARCHING) {
             this.update();
         }
         if (DEBUG)
-            debug("ResearchListAdapter", "< onPathNumberChange(" + project + ", " + pathNumber + ")");
+            debug("< onPathNumberChange(" + project + ", " + pathNumber + ")");
     }
 
     // Override BaseAdapter methods where needed
 
     @Override
     public boolean areAllItemsEnabled() {
-        if (DEBUG)
-            debug("ResearchListAdapter", "> areAllItemsEnabled()");
-        if (DEBUG)
-            debug("ResearchListAdapter", "< areAllItemsEnabled() returning true");
+        if (DEBUG) debug("> areAllItemsEnabled()");
+        if (DEBUG) debug("< areAllItemsEnabled() returning true");
         return true;
     }
 
     @Override
     public int getItemViewType(int position) {
+        if (DEBUG) debug("> getItemViewType(" + position + ")");
         if (DEBUG)
-            debug("ResearchListAdapter", "> getItemViewType(" + position + ")");
-        if (DEBUG)
-            debug("ResearchListAdapter", "< getItemViewType(" + position + ") returning 0");
+            debug("< getItemViewType(" + position + ") returning 0");
         return 0;
     }
 
     @Override
     public int getViewTypeCount() {
-        if (DEBUG) debug("ResearchListAdapter", "> getViewTypeCount()");
-        if (DEBUG)
-            debug("ResearchListAdapter", "< getViewTypeCount() returning 1");
+        if (DEBUG) debug("> getViewTypeCount()");
+        if (DEBUG) debug("< getViewTypeCount() returning 1");
         return 1;
     }
 
     @Override
     public boolean isEnabled(int position) {
+        if (DEBUG) debug("> isEnabled(" + position + ")");
         if (DEBUG)
-            debug("ResearchListAdapter", "> isEnabled(" + position + ")");
-        if (DEBUG)
-            debug("ResearchListAdapter", "< isEnabled(" + position + ") returning true");
+            debug("< isEnabled(" + position + ") returning true");
         return true;
     }
 
     @Override
     public boolean hasStableIds() {
-        if (DEBUG) debug("ResearchListAdapter", "> hasStableIds()");
-        if (DEBUG)
-            debug("ResearchListAdapter", "< hasStableIds() returning true");
+        if (DEBUG) debug("> hasStableIds()");
+        if (DEBUG) debug("< hasStableIds() returning true");
         return true;
     }
 
     @Override
     public boolean isEmpty() {
-        if (DEBUG) debug("ResearchListAdapter", "> isEmpty()");
+        if (DEBUG) debug("> isEmpty()");
         if (DEBUG)
-            debug("ResearchListAdapter", "< isEmpty() returning " + (this.getCount() == 0));
+            debug("< isEmpty() returning " + (this.getCount() == 0));
         return (this.getCount() == 0);
     }
 
     @Override
     public int getCount() {
-        if (DEBUG) debug("ResearchListAdapter", "> getCount()");
+        if (DEBUG) debug("> getCount()");
         if (DEBUG)
-            debug("ResearchListAdapter", "< getCount() returning " + (this.sResearchOrder.size()));
+            debug("< getCount() returning " + (this.sResearchOrder.size()));
         return this.sResearchOrder.size();
     }
 
     @Override
     public long getItemId(int i) {
+        if (DEBUG) debug("> getItemId(" + i + ")");
         if (DEBUG)
-            debug("ResearchListAdapter", "> getItemId(" + i + ")");
-        if (DEBUG)
-            debug("ResearchListAdapter", "< getItemId(" + i + ") returning " + (this.getItem(i).hashCode()));
+            debug("< getItemId(" + i + ") returning " + (this.getItem(i).hashCode()));
         return this.getItem(i).hashCode();
     }
 
     @Override
     public Object getItem(int i) {
-        if (DEBUG) debug("ResearchListAdapter", "> getItem(" + i + ")");
+        if (DEBUG) debug("> getItem(" + i + ")");
         if (DEBUG)
-            debug("ResearchListAdapter", "< getItem(" + i + ") returning " + (this.sResearchOrder.get(i)));
+            debug("< getItem(" + i + ") returning " + (this.sResearchOrder.get(i)));
         return this.sResearchOrder.get(i);
     }
 
     @Override
     public View getView(int i, View view, ViewGroup parentView) {
         if (DEBUG)
-            debug("ResearchListAdapter", "> getView(" + i + ", " + view + ", " + parentView + ")");
+            debug("> getView(" + i + ", " + view + ", " + parentView + ")");
         if (view == null) {
             view = sInflater.inflate(R.layout.research_project_list_item, parentView, false);
         }
@@ -310,7 +293,7 @@ public class ResearchListAdapter extends BaseAdapter implements ResearchProject.
         }
 
         if (DEBUG)
-            debug("ResearchListAdapter", "< getView(" + i + ", " + view + ", " + parentView + ") returning " + (view));
+            debug("< getView(" + i + ", " + view + ", " + parentView + ") returning " + (view));
         return view;
     }
 
