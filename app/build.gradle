@@ -25,7 +25,7 @@ dependencies {
     compile 'com.android.support:appcompat-v7:24.2.0'
     compile 'com.android.support:design:24.2.0'
     compile 'com.android.support:support-v4:24.2.0'
-    compile 'org.powermock:powermock-module-junit4:1.6.5'
-    compile 'org.powermock:powermock-api-easymock:1.6.5'
-    compile 'org.easymock:easymock:3.4'
+    androidTestCompile 'org.powermock:powermock-module-junit4:1.6.5'
+    androidTestCompile 'org.powermock:powermock-api-easymock:1.6.5'
+    androidTestCompile 'org.easymock:easymock:3.4'
 }
