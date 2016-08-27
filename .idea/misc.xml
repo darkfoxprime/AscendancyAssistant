@@ -4,9 +4,6 @@
     <entry_points version="2.0">
       <entry_point TYPE="class" FQNAME="com.github.jearls.ascendancyassistant.ResearchTreeTest" />
     </entry_points>
-    <list size="1">
-      <item index="0" class="java.lang.String" itemvalue="org.junit.Test" />
-    </list>
   </component>
   <component name="NullableNotNullManager">
     <option name="myDefaultNullable" value="android.support.annotation.Nullable" />
