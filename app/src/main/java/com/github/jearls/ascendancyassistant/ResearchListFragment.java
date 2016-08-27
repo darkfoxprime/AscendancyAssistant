@@ -22,16 +22,24 @@ import java.io.IOException;
  * instance of this fragment.
  */
 public class ResearchListFragment extends Fragment {
+    private static final boolean DEBUG = false;
     private static final int NOTIFICATION_LOADING_ALERT = 1;
     // the fragment's state
     private ResearchTree mResearch = null;
     @SuppressWarnings("FieldCanBeLocal")
     private ResearchListAdapter mAdapter = null;
-
     private OnResearchListFragmentInteractionListener mListener;
 
     public ResearchListFragment() {
-        Log.d("ResearchListFragment", "ResearchListFragment()");
+        if (DEBUG)
+            debug("ResearchListFragment", "> ResearchListFragment()");
+        if (DEBUG)
+            debug("ResearchListFragment", "< ResearchListFragment()");
+    }
+
+    private static void debug(String tag, String msg) {
+        System.err.println(tag + ": " + msg);
+        Log.d(tag, msg);
     }
 
     /**
@@ -41,12 +49,14 @@ public class ResearchListFragment extends Fragment {
      * @return A new instance of fragment ResearchListFragment.
      */
     public static ResearchListFragment newInstance() {
-        Log.d("ResearchListFragment", "newInstance()");
+        if (DEBUG) debug("ResearchListFragment", "> newInstance()");
         //noinspection UnnecessaryLocalVariable
         ResearchListFragment fragment = new ResearchListFragment();
 //        Bundle args = new Bundle();
 //        args.putSerializable(ARG_RESEARCH, research);
 //        fragment.setArguments(args);
+        if (DEBUG)
+            debug("ResearchListFragment", "< newInstance() returning " + fragment);
         return fragment;
     }
 
@@ -54,7 +64,8 @@ public class ResearchListFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.d("ResearchListFragment", "onCreate()");
+        if (DEBUG)
+            debug("ResearchListFragment", "> onCreate(" + savedInstanceState + ")");
         try {
             this.mResearch = ResearchTree.loadXmlResearchTree(this.getResources().getXml(R.xml.default_research_tree));
         } catch (IOException e) {
@@ -62,16 +73,21 @@ public class ResearchListFragment extends Fragment {
             NotificationCompat.Builder alert = new NotificationCompat.Builder(this.getContext()).setSmallIcon(android.R.drawable.ic_dialog_alert).setContentTitle("Unable to load default research tree").setContentText(e.getLocalizedMessage());
             ((NotificationManager)this.getContext().getSystemService(Context.NOTIFICATION_SERVICE)).notify(NOTIFICATION_LOADING_ALERT, alert.build());
         }
+        if (DEBUG)
+            debug("ResearchListFragment", "< onCreate(" + savedInstanceState + ")");
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        Log.d("ResearchListFragment", "onCreateView()");
+        if (DEBUG)
+            debug("ResearchListFragment", "> onCreateView(" + inflater + ", " + container + ", " + savedInstanceState + ")");
         View rootView = inflater.inflate(R.layout.fragment_research, container, false);
         ListView listView = (ListView) rootView.findViewById(R.id.research_list_view);
         this.mAdapter = new ResearchListAdapter(this.getActivity(), this.mResearch);
         listView.setAdapter(this.mAdapter);
+        if (DEBUG)
+            debug("ResearchListFragment", "< onCreateView(" + inflater + ", " + container + ", " + savedInstanceState + ") returning " + rootView);
         return rootView;
     }
 
@@ -86,20 +102,24 @@ public class ResearchListFragment extends Fragment {
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
-        Log.d("ResearchListFragment", "onAttach()");
+        if (DEBUG)
+            debug("ResearchListFragment", "> onAttach(" + context + ")");
         if (context instanceof OnResearchListFragmentInteractionListener) {
             mListener = (OnResearchListFragmentInteractionListener) context;
         } else {
             throw new RuntimeException(context.toString()
                     + " must implement OnResearchListFragmentInteractionListener");
         }
+        if (DEBUG)
+            debug("ResearchListFragment", "< onAttach(" + context + ")");
     }
 
     @Override
     public void onDetach() {
         super.onDetach();
-        Log.d("ResearchListFragment", "onDetach()");
+        if (DEBUG) debug("ResearchListFragment", "> onDetach()");
         mListener = null;
+        if (DEBUG) debug("ResearchListFragment", "< onDetach()");
     }
 
     /**
