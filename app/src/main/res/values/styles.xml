@@ -1,20 +1,31 @@
 <resources>
 
     <!-- Base application theme. -->
-    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+    <style name="AppLight" parent="Theme.AppCompat.Light.NoActionBar">
         <!-- Customize your theme here. -->
         <item name="colorPrimary">@color/colorPrimary</item>
-        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
+        <item name="colorText">@android:color/primary_text_light</item>
+        <item name="normalBackground">@color/backgroundNormalLight
+        </item>
+        <item name="selectedBackground">@color/backgroundSelectedLight
+        </item>
+        <item name="menuThemeDarkVisibility">@integer/view_visible
+        </item>
+        <item name="menuThemeLightVisibility">@integer/view_gone</item>
     </style>
 
-    <style name="AppTheme.NoActionBar">
-        <item name="windowActionBar">false</item>
-        <item name="windowNoTitle">true</item>
+    <style name="AppDark" parent="Theme.AppCompat.NoActionBar">
+        <!-- Customize your theme here. -->
+        <item name="colorPrimary">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+        <item name="colorText">@android:color/primary_text_dark</item>
+        <item name="normalBackground">@color/backgroundNormalDark</item>
+        <item name="selectedBackground">@color/backgroundSelectedDark
+        </item>
+        <item name="menuThemeDarkVisibility">@integer/view_gone</item>
+        <item name="menuThemeLightVisibility">@integer/view_visible
+        </item>
     </style>
-
-    <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
-
-    <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 
 </resources>

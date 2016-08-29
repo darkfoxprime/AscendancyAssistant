@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<InitialResearch
+    >
+    <Technology name="Artificial Hydroponifier"/>
+    <ResearchProject name="Power Conversion"/>
+    <Technology name="Industrial Megafacility"/>
+    <Technology name="Research Campus"/>
+    <Technology name="Habitat"/>
+    <ResearchProject name="Large Scale Construction"/>
+    <ResearchProject name="Level Logic"/>
+    <Technology name="Hyperpower Plant"/>
+    <Technology name="Internet"/>
+    <Technology name="Lush Growth Bomb"/>
+</InitialResearch>

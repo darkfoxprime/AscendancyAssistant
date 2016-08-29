@@ -9,13 +9,31 @@
                     android:paddingTop="@dimen/activity_vertical_margin"
     -->
 
+    <android.support.v7.widget.Toolbar
+        android:id="@+id/research_toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        >
 
-    <Spinner
-        android:id="@+id/spinner"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentTop="true"/>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal">
+
+            <Spinner
+                android:id="@+id/research_list_showing"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:entries="@array/research_list_displays"
+                android:transitionGroup="true"/>
+
+
+        </LinearLayout>
+
+    </android.support.v7.widget.Toolbar>
+
 
     <ListView
         android:id="@+id/research_list_view"
@@ -23,6 +41,7 @@
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
         android:layout_alignParentRight="true"
-        android:layout_below="@+id/spinner"
+        android:layout_below="@+id/research_toolbar"
         tools:listitem="@layout/research_project_list_item"/>
+
 </RelativeLayout>

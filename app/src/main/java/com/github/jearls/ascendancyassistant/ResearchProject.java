@@ -6,11 +6,15 @@ import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -27,24 +31,30 @@ public class ResearchProject {
     @SuppressWarnings("unused")
     private static final long serialVersionUID = 2016082400L;
 
-    private static final boolean DEBUG = false;
-    private static final Map<String, ResearchProject> sResearchTree = new HashMap<>();
-    private static final Set<OnResearchChangeListener> sResearchChangeListeners = new HashSet<>();
-
-    private final String sName;
-    private final Set<String> sTechnologies;
-    private final Set<ResearchProject> sDependents;
-    private final Set<ResearchProject> sDependers;
-    private final Set<OnResearchStatusChangeListener> sResearchStatusChangeListeners;
+    private static final boolean                           DEBUG                        = false;
+    private static final Map<String, ResearchProject>      sResearchTree                = new HashMap<>();
+    private static final Map<String, ResearchProject>      sResearchTechnologies        = new HashMap<>();
+    private static final Set<OnResearchChangeListener>     sResearchChangeListeners     = new HashSet<>();
+    private static final Set<OnResearchPathChangeListener> sResearchPathChangeListeners = new HashSet<>();
+    private static final List<ResearchProject>             sInitialResearch             = new ArrayList<>();
+    private static final List<ResearchProject>             sGoalsList                   = new ArrayList<>();
+    private static final List<ResearchProject>             sPathList                    = new ArrayList<>();
+    private static final List<Method>                      batchTriggerMethods          = new ArrayList<>();
+    private static final List<Object>                      batchTriggerInstances        = new ArrayList<>();
+    private static final List<Object[]>                    batchTriggerParameters       = new ArrayList<>();
+    private static       boolean                           batchTriggerMode             = false;
+    private final String                                  sName;
+    private final Set<String>                             sTechnologies;
+    private final Set<ResearchProject>                    sDependents;
+    private final Set<ResearchProject>                    sDependers;
+    private final Set<OnResearchCompletedChangeListener>  sResearchCompletedChangeListeners;
     private final Set<OnResearchDependencyChangeListener> sResearchDependencyChangeListeners;
     private final Set<OnResearchTechnologyChangeListener> sResearchTechnologyChangeListeners;
-    private boolean mCompleted;
-    private boolean mGoal;
-    private boolean mInPath;
-    private int mGoalNumber;
-    private int mPathNumber;
+    private       boolean                                 mCompleted;
+    private       int                                     mGoalNumber;
+    private       int                                     mPathNumber;
 
-    public ResearchProject(String name) throws OnResearchChangeListener.ResearchChangeProhibitedException, DuplicateResearchProjectException {
+    public ResearchProject(String name) throws DuplicateResearchProjectException {
         this.sName = name;
         if (sResearchTree.containsKey(name)) {
             throw new DuplicateResearchProjectException(name);
@@ -54,20 +64,17 @@ public class ResearchProject {
         this.sDependents = new HashSet<>();
         this.sDependers = new HashSet<>();
         this.mCompleted = false;
-        this.mGoal = false;
-        this.mInPath = false;
         this.mGoalNumber = 0;
         this.mPathNumber = 0;
-        this.sResearchStatusChangeListeners = new HashSet<>();
+        this.sResearchCompletedChangeListeners = new HashSet<>();
         this.sResearchDependencyChangeListeners = new HashSet<>();
         this.sResearchTechnologyChangeListeners = new HashSet<>();
-        try {
-            sResearchTree.put(name, this);
-            triggerResearchProjectAdded(this);
-        } catch (OnResearchChangeListener.ResearchChangeProhibitedException e) {
-            sResearchTree.remove(name);
-            throw e;
-        }
+        sResearchTree.put(name, this);
+        triggerResearchProjectAdded(this);
+    }
+
+    public static List<ResearchProject> getInitialResearch() {
+        return Collections.unmodifiableList(sInitialResearch);
     }
 
     public static void addResearchChangeListener(OnResearchChangeListener listener) {
@@ -82,16 +89,14 @@ public class ResearchProject {
         sResearchChangeListeners.clear();
     }
 
-    private static void triggerResearchProjectAdded(ResearchProject researchProject) throws OnResearchChangeListener.ResearchChangeProhibitedException {
-        for (OnResearchChangeListener listener : sResearchChangeListeners) {
-            listener.onResearchProjectAdded(researchProject);
-        }
-    }
-
-    private static void triggerResearchProjectRemoved(ResearchProject researchProject) throws OnResearchChangeListener.ResearchChangeProhibitedException {
-        for (OnResearchChangeListener listener : sResearchChangeListeners) {
-            listener.onResearchProjectRemoved(researchProject);
-        }
+    public static void reset() {
+        enterBatchTriggerMode();
+        clearResearchChangeListeners();
+        clearResearchPathChangeListeners();
+        clearResearchProjects();
+        clearResearchGoals();
+        clearResearchPath();
+        resetBatchTriggerMode();
     }
 
     @SuppressWarnings("SameParameterValue")
@@ -109,60 +114,81 @@ public class ResearchProject {
         return allResearchProjects;
     }
 
+    public static List<ResearchProject> getResearchGoals() {
+        if (DEBUG)
+            debug("ResearchProject", "> getResearchGoals()");
+        List<ResearchProject> goalList = Collections.unmodifiableList(sGoalsList);
+        if (DEBUG)
+            debug("ResearchProject", "< getResearchGoals() returning " + goalList);
+        return goalList;
+    }
+
+    public static List<ResearchProject> getResearchPath() {
+        if (DEBUG)
+            debug("ResearchProject", "> getResearchPath()");
+        List<ResearchProject> pathList = Collections.unmodifiableList(sPathList);
+        if (DEBUG)
+            debug("ResearchProject", "< getResearchPath() returning " + pathList);
+        return pathList;
+    }
+
     public static ResearchProject getResearchProject(String name) {
         return sResearchTree.get(name);
     }
 
-    public static void removeAllResearchProjects() throws OnResearchChangeListener.ResearchChangeProhibitedException {
-        Iterator<ResearchProject> researchProjectIterator = sResearchTree.values().iterator();
-        while (researchProjectIterator.hasNext()) {
-            ResearchProject researchProject = researchProjectIterator.next();
-            researchProjectIterator.remove();
+    public static ResearchProject getResearchProjectForTechnology(String technology) {
+        return sResearchTechnologies.get(technology);
+    }
+
+    public static void clearResearchProjects() {
+        while (sResearchTree.size() > 0) {
+            ResearchProject researchProject = sResearchTree.values().iterator().next();
             removeResearchProject(researchProject);
         }
     }
 
-    public static void removeResearchProject(ResearchProject researchProject) throws OnResearchChangeListener.ResearchChangeProhibitedException {
-        // FIXME properly preserve and restore state when needed
-        // FIXME clear dependencies before triggering
-        try {
-            // remove from research tree
-            sResearchTree.remove(researchProject.getName());
-            triggerResearchProjectRemoved(researchProject);
-        } catch (OnResearchChangeListener.ResearchChangeProhibitedException e) {
-            sResearchTree.put(researchProject.getName(), researchProject);
-            throw e;
-        }
-        // clear listeners
-        researchProject.clearResearchDependencyChangeListeners();
-        researchProject.clearResearchTechnologyChangeListeners();
-        researchProject.clearResearchStatusChangeListeners();
-        // clear dependency links
-        Iterator<ResearchProject> dependencyIterator = researchProject.getDependents();
-        while (dependencyIterator.hasNext()) {
-            ResearchProject dependent = dependencyIterator.next();
-            dependencyIterator.remove();
-            try {
-                researchProject.removeDependent(dependent);
-            } catch (OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException e) {
-                /*NOTREACHED*/
-            }
-        }
-        dependencyIterator = researchProject.getDependers();
-        while (dependencyIterator.hasNext()) {
-            ResearchProject depender = dependencyIterator.next();
-            dependencyIterator.remove();
-            try {
-                researchProject.removeDepender(depender);
-            } catch (OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException e) {
-                /*NOTREACHED*/
-            }
+    public static void clearResearchPath() {
+        while (!sPathList.isEmpty()) {
+            ResearchProject researchProject = sPathList.get(0);
+            removeFromPath(researchProject);
         }
     }
 
-    public static void loadXmlResearchTree(XmlPullParser parser) throws ResearchTreeXmlParserException, OnResearchChangeListener.ResearchChangeProhibitedException, OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException, OnResearchTechnologyChangeListener.ResearchTechnologyChangeProhibitedException {
+    public static void clearResearchGoals() {
+        while (!sGoalsList.isEmpty()) {
+            ResearchProject researchProject = sGoalsList.get(0);
+            removeFromGoals(researchProject);
+        }
+    }
+
+    public static void removeResearchProject(ResearchProject researchProject) {
+        // FIXME properly preserve and restore state when needed
+        // FIXME clear dependencies before triggering
+        sResearchTree.remove(researchProject.getName());
+        triggerResearchProjectRemoved(researchProject);
+        // remove from path and goal lists
+        if (researchProject.mPathNumber > 0)
+            researchProject.removeFromPath();
+        if (researchProject.mGoalNumber > 0)
+            researchProject.removeFromGoals();
+        // clear listeners
+        researchProject.clearResearchDependencyChangeListeners();
+        researchProject.clearResearchTechnologyChangeListeners();
+        researchProject.clearResearchCompletedChangeListeners();
+        // clear dependency links
+        while (researchProject.sDependents.size() > 0) {
+            researchProject.removeDependent(researchProject.sDependents.iterator().next());
+        }
+        while (researchProject.sDependers.size() > 0) {
+            researchProject.removeDepender(researchProject.sDependers.iterator().next());
+        }
+    }
+
+    public static void loadXmlResearchTree(XmlPullParser parser) throws ResearchXmlParserException {
         if (DEBUG)
             debug("ResearchProject", "> loadXmlResearchTree(" + parser + ")");
+        enterBatchTriggerMode();
+        clearResearchProjects();
         ResearchProject project = null;
         ResearchTreeXmlParser researchTreeXmlParser = new ResearchTreeXmlParser(parser);
 
@@ -194,11 +220,305 @@ public class ResearchProject {
             }
             if (DEBUG)
                 debug("ResearchProject", "< loadXmlResearchTree(" + parser + ")");
-        } catch (ResearchTreeXmlParserException e) {
-            try {
-                removeAllResearchProjects();
-            } catch (OnResearchChangeListener.ResearchChangeProhibitedException rcpe) { /* IGNORED */ }
+        } catch (ResearchXmlParserException e) {
+            resetBatchTriggerMode();
+            clearResearchProjects();
             throw e;
+        }
+        leaveBatchTriggerMode();
+    }
+
+    public static void loadXmlInitialResearch(XmlPullParser parser) throws ResearchXmlParserException {
+        if (DEBUG)
+            debug("ResearchProject", "> loadXmlInitialResearch(" + parser + ")");
+        sInitialResearch.clear();
+        ResearchProject          project;
+        InitialResearchXmlParser initialResearchXmlParser = new InitialResearchXmlParser(parser);
+
+        try {
+            int event;
+            while ((event = initialResearchXmlParser.next()) != InitialResearchXmlParser.DONE) {
+                switch (event) {
+                    case InitialResearchXmlParser.RESEARCH_PROJECT:
+                        project = getResearchProject(initialResearchXmlParser.getName());
+                        if (project != null)
+                            sInitialResearch.add(project);
+                        break;
+                    case InitialResearchXmlParser.TECHNOLOGY:
+                        project = getResearchProjectForTechnology(initialResearchXmlParser.getName());
+                        if (project != null)
+                            sInitialResearch.add(project);
+                        break;
+                }
+            }
+            if (DEBUG)
+                debug("ResearchProject", "< loadXmlResearchTree(" + parser + ")");
+        } catch (ResearchXmlParserException e) {
+            resetBatchTriggerMode();
+            clearResearchProjects();
+            throw e;
+        }
+    }
+
+    public static void addResearchPathChangeListener(OnResearchPathChangeListener listener) {
+        sResearchPathChangeListeners.add(listener);
+    }
+
+    public static void removeResearchPathChangeListener(OnResearchPathChangeListener listener) {
+        sResearchPathChangeListeners.remove(listener);
+    }
+
+    public static void clearResearchPathChangeListeners() {
+        sResearchPathChangeListeners.clear();
+    }
+
+    private static void triggerOnResearchPathChange(ResearchProject added, ResearchProject removed) {
+        if (ResearchProject.canTrigger("triggerOnResearchPathChange", ResearchProject.class, new Class<?>[]{ResearchProject.class, ResearchProject.class}, added, removed)) {
+            for (OnResearchPathChangeListener listener : sResearchPathChangeListeners) {
+                listener.onResearchPathChange(getResearchPath(), added, removed);
+            }
+        }
+    }
+
+    private static void triggerOnResearchGoalsChange(ResearchProject added, ResearchProject removed) {
+        if (ResearchProject.canTrigger("triggerOnResearchGoalsChange", ResearchProject.class, new Class<?>[]{ResearchProject.class, ResearchProject.class}, added, removed)) {
+            for (OnResearchPathChangeListener listener : sResearchPathChangeListeners) {
+                listener.onResearchGoalsChange(getResearchGoals(), added, removed);
+            }
+        }
+    }
+
+    public static boolean isBatchTriggerMode() {
+        return batchTriggerMode;
+    }
+
+    public static void enterBatchTriggerMode() {
+        if (DEBUG) debug("ResearchProject", "> enterBatchTriggerMode");
+        batchTriggerMode = true;
+        if (DEBUG) debug("ResearchProject", "< enterBatchTriggerMode");
+    }
+
+    public static void resetBatchTriggerMode() {
+        if (DEBUG) debug("ResearchProject", "> resetBatchTriggerMode");
+        batchTriggerMode = false;
+        batchTriggerMethods.clear();
+        batchTriggerInstances.clear();
+        batchTriggerParameters.clear();
+        if (DEBUG) debug("ResearchProject", "< resetBatchTriggerMode");
+    }
+
+    public static void leaveBatchTriggerMode() {
+        if (DEBUG) debug("ResearchProject", "> clearBatchTriggerMode");
+        batchTriggerMode = false;
+        callTriggers();
+        if (DEBUG) debug("ResearchProject", "< clearBatchTriggerMode");
+    }
+
+    private static String strRepr(String str) {
+        return "\"" + (str.replaceAll("([\\\\\"])", "\\$1").replace("\n", "\\n").replace("\r", "\\r").replace("\b", "\\b").replace("\t", "\\t").replace("\f", "\\f")) + "\"";
+    }
+
+    private static String arrayRepr(Object[] ary) {
+        StringBuilder buf = new StringBuilder(ary.getClass().getClass().getName() + "[");
+        for (int i = 0; i < ary.length; i += 1) {
+            if (i > 0) {
+                buf.append(", ");
+            }
+            buf.append(repr(ary[i]));
+        }
+        buf.append("]");
+        return buf.toString();
+    }
+
+    private static String repr(Object foo) {
+        if (foo == null) {
+            return "null";
+        }
+        if (foo instanceof String) {
+            return strRepr((String) foo);
+        }
+        if (foo instanceof Object[]) {
+            return arrayRepr((Object[]) foo);
+        }
+        return foo.toString();
+    }
+
+
+    private static boolean canTrigger(String methodName, Object instance, Class<?>[] methodSignature, Object... callParams) {
+        if (DEBUG)
+            debug("ResearchProject", "> canTrigger(" + repr(methodName) + ", " + repr(instance) + ", " + repr(methodSignature) + ", " + repr(callParams) + ")");
+        try {
+            Class<?> clazz;
+            if (instance instanceof Class) {
+                clazz = (Class<?>) instance;
+            } else {
+                clazz = instance.getClass();
+            }
+            Method method = clazz.getDeclaredMethod(methodName, methodSignature);
+            if (batchTriggerMode) {
+                int i = batchTriggerMethods.indexOf(method);
+                if ((i < 0) || (!Arrays.equals(callParams, batchTriggerParameters.get(i)))) {
+                    batchTriggerMethods.add(method);
+                    batchTriggerInstances.add(instance);
+                    batchTriggerParameters.add(callParams);
+                }
+            }
+            if (DEBUG)
+                debug("ResearchProject", "< canTrigger(" + repr(methodName) + ", " + repr(instance) + ", " + repr(methodSignature) + ", " + repr(callParams) + ") returning " + (!batchTriggerMode));
+            return !batchTriggerMode;
+        } catch (NoSuchMethodException e) {
+            if (DEBUG)
+                debug("ResearchProject", "< canTrigger(" + repr(methodName) + ", " + repr(instance) + ", " + repr(methodSignature) + ", " + repr(callParams) + ") unable to locate trigger method");
+            throw new RuntimeException("Unable to locate trigger method " + methodName + " on instance " + instance + " with signature " + repr(methodSignature), e);
+        }
+    }
+
+    private static void callTriggers() {
+        if (DEBUG) debug("ResearchProject", "> callTriggers()");
+        if (!batchTriggerMode) {
+            for (int i = 0; i < batchTriggerMethods.size(); i += 1) {
+                Method trigger = batchTriggerMethods.get(i);
+                trigger.setAccessible(true);
+                Object   instance      = batchTriggerInstances.get(i);
+                Object[] triggerParams = batchTriggerParameters.get(i);
+                try {
+                    trigger.invoke(instance, triggerParams);
+                } catch (ReflectiveOperationException e) {
+                    /* FIXME: IGNORED */
+                }
+            }
+        }
+        if (DEBUG) debug("ResearchProject", "< callTriggers()");
+    }
+
+    private static void triggerResearchProjectAdded(ResearchProject researchProject) {
+        if (ResearchProject.canTrigger("triggerResearchProjectAdded", ResearchProject.class, new Class<?>[]{ResearchProject.class}, researchProject)) {
+            for (OnResearchChangeListener listener : sResearchChangeListeners) {
+                listener.onResearchProjectAdded(researchProject);
+            }
+        }
+    }
+
+    private static void triggerResearchProjectRemoved(ResearchProject researchProject) {
+        if (ResearchProject.canTrigger("triggerResearchProjectRemoved", ResearchProject.class, new Class<?>[]{ResearchProject.class}, researchProject)) {
+            for (OnResearchChangeListener listener : sResearchChangeListeners) {
+                listener.onResearchProjectRemoved(researchProject);
+            }
+        }
+    }
+
+    public static void removeFromPath(ResearchProject researchProject) {
+        if (DEBUG)
+            debug("ResearchProject", "> removeFromPath(" + researchProject + ")");
+        if (researchProject.mPathNumber > 0) {
+            int index = researchProject.mPathNumber - 1;
+            researchProject.mPathNumber = 0;
+            sPathList.remove(index);
+            while (index < sPathList.size()) {
+                sPathList.get(index).mPathNumber = index + 1;
+                index += 1;
+            }
+            triggerOnResearchPathChange(null, researchProject);
+        }
+        if (DEBUG)
+            debug("ResearchProject", "< removeFromPath(" + researchProject + ")");
+    }
+
+    public static void addToPath(ResearchProject researchProject, int index) throws ArrayIndexOutOfBoundsException, DuplicateResearchProjectException {
+        if (DEBUG)
+            debug("ResearchProject", "> addToPath(" + researchProject + ", " + index + ")");
+        if ((index < 1) || (index > sPathList.size() + 1))
+            throw new ArrayIndexOutOfBoundsException(index);
+        if (researchProject.mPathNumber != 0)
+            throw new DuplicateResearchProjectException("already in path");
+        researchProject.mPathNumber = index;
+        sPathList.add(index - 1, researchProject);
+        while (index < sPathList.size()) {
+            sPathList.get(index).mPathNumber = index + 1;
+            index += 1;
+        }
+        triggerOnResearchPathChange(researchProject, null);
+        if (DEBUG)
+            debug("ResearchProject", "< addToPath(" + researchProject + ", " + index + ")");
+    }
+
+    public static void addToPath(ResearchProject researchProject) throws ArrayIndexOutOfBoundsException, DuplicateResearchProjectException {
+        addToPath(researchProject, sPathList.size() + 1);
+    }
+
+    public static void removeFromGoals(ResearchProject researchProject) {
+        if (DEBUG)
+            debug("ResearchProject", "> removeFromGoals(" + researchProject + ")");
+        if (researchProject.mGoalNumber > 0) {
+            int index = researchProject.mGoalNumber - 1;
+            researchProject.mGoalNumber = 0;
+            sGoalsList.remove(index);
+            while (index < sGoalsList.size()) {
+                sGoalsList.get(index).mGoalNumber = index + 1;
+                index += 1;
+            }
+            triggerOnResearchGoalsChange(null, researchProject);
+        }
+        if (DEBUG)
+            debug("ResearchProject", "< removeFromGoals(" + researchProject + ")");
+    }
+
+    public static void addToGoals(ResearchProject researchProject, int index) throws ArrayIndexOutOfBoundsException, DuplicateResearchProjectException {
+        if (DEBUG)
+            debug("ResearchProject", "> addToGoals(" + researchProject + ", " + index + ")");
+        if ((index < 1) || (index > sGoalsList.size() + 1))
+            throw new ArrayIndexOutOfBoundsException(index);
+        if (researchProject.mGoalNumber != 0)
+            throw new DuplicateResearchProjectException("already a goal");
+        researchProject.mGoalNumber = index;
+        sGoalsList.add(index - 1, researchProject);
+        while (index < sGoalsList.size()) {
+            sGoalsList.get(index).mGoalNumber = index + 1;
+            index += 1;
+        }
+        triggerOnResearchGoalsChange(researchProject, null);
+        if (DEBUG)
+            debug("ResearchProject", "< addToGoals(" + researchProject + ", " + index + ")");
+    }
+
+    public static void addToGoals(ResearchProject researchProject) throws ArrayIndexOutOfBoundsException, DuplicateResearchProjectException {
+        addToGoals(researchProject, sGoalsList.size() + 1);
+    }
+
+    public static void recomputePath() {
+        if (DEBUG)
+            debug("ResearchProject", "> recomputePath()");
+        clearResearchPath();
+        for (ResearchProject researchProject : sGoalsList) {
+            addDependentsToPath(researchProject);
+        }
+        int i = 1;
+        while (i < sGoalsList.size()) {
+            ResearchProject researchProject = sGoalsList.get(i);
+            if (sGoalsList.get(i - 1).mPathNumber > researchProject.mPathNumber) {
+                researchProject.removeFromGoals();
+                researchProject.addToGoals(i); // since the goals are 1-indexed and 'i' is 0-indexed, this moves it up
+                if (i > 1) {
+                    i -= 1;
+                } else {
+                    i += 1;
+                }
+            } else {
+                i += 1;
+            }
+        }
+        if (DEBUG)
+            debug("ResearchProject", "< recomputePath()");
+    }
+
+    private static void addDependentsToPath(ResearchProject project) {
+        if (!sPathList.contains(project)) {
+            for (ResearchProject dependentProject : project.getDependents()) {
+                if (!sPathList.contains(dependentProject)) {
+                    addDependentsToPath(dependentProject);
+                }
+            }
+            addToPath(project);
         }
     }
 
@@ -206,68 +526,55 @@ public class ResearchProject {
         return this.sName.hashCode();
     }
 
-    @SuppressWarnings("unused")
-    public boolean isInPath() {
-        return mInPath;
+    public boolean isCompleted() {
+        return mCompleted;
     }
 
-    @SuppressWarnings("unused")
-    public void setInPath(boolean inPath) {
-        if (this.mInPath != inPath) {
-            this.mInPath = inPath;
-            this.triggerOnInPathChange();
+    public void setCompleted(boolean completed) {
+        if (this.mCompleted != completed) {
+            this.mCompleted = completed;
+            this.triggerOnResearchCompletedChange();
         }
+    }
+
+    public boolean isInPath() {
+        return mPathNumber != 0;
     }
 
     public int getPathNumber() {
         return mPathNumber;
     }
 
-    @SuppressWarnings("unused")
-    public void setPathNumber(int pathNumber) {
-        if (this.mPathNumber != pathNumber) {
-            this.mPathNumber = pathNumber;
-            this.triggerOnPathNumberChange();
-        }
+    public void removeFromPath() {
+        removeFromPath(this);
     }
 
-    @SuppressWarnings("unused")
-    public boolean isCompleted() {
-        return mCompleted;
+    public void addToPath(int index) throws ArrayIndexOutOfBoundsException, DuplicateResearchProjectException {
+        addToPath(this, index);
     }
 
-    @SuppressWarnings("unused")
-    public void setCompleted(boolean completed) {
-        if (this.mCompleted != completed) {
-            this.mCompleted = completed;
-            this.triggerOnCompletedChange();
-        }
+    public void addToPath() throws ArrayIndexOutOfBoundsException, DuplicateResearchProjectException {
+        addToPath(this);
     }
 
-    @SuppressWarnings("unused")
     public boolean isGoal() {
-        return mGoal;
+        return mGoalNumber != 0;
     }
 
-    @SuppressWarnings("unused")
-    public void setGoal(boolean goal) {
-        if (this.mGoal != goal) {
-            this.mGoal = goal;
-            this.triggerOnGoalChange();
-        }
-    }
-
-    @SuppressWarnings("unused")
     public int getGoalNumber() {
         return mGoalNumber;
     }
 
-    @SuppressWarnings("unused")
-    public void setGoalNumber(int goalNumber) {
-        if (this.mGoalNumber != goalNumber) {
-            this.mGoalNumber = goalNumber;
-            this.triggerOnGoalNumberChange();
-        }
+    public void removeFromGoals() {
+        removeFromGoals(this);
+    }
+
+    public void addToGoals(int index) throws ArrayIndexOutOfBoundsException, DuplicateResearchProjectException {
+        addToGoals(this, index);
+    }
+
+    public void addToGoals() throws ArrayIndexOutOfBoundsException, DuplicateResearchProjectException {
+        addToGoals(this, sGoalsList.size() + 1);
     }
 
     public String getName() {
@@ -286,41 +593,20 @@ public class ResearchProject {
         this.sResearchTechnologyChangeListeners.clear();
     }
 
-    public void triggerTechnologyAdded(String technology) throws OnResearchTechnologyChangeListener.ResearchTechnologyChangeProhibitedException {
-        for (OnResearchTechnologyChangeListener listener : this.sResearchTechnologyChangeListeners) {
-            listener.onTechnologyAdded(this, technology);
-        }
-    }
-
-    public void triggerTechnologyRemoved(String technology) throws OnResearchTechnologyChangeListener.ResearchTechnologyChangeProhibitedException {
-        for (OnResearchTechnologyChangeListener listener : this.sResearchTechnologyChangeListeners) {
-            listener.onTechnologyRemoved(this, technology);
-        }
-    }
-
     public Iterator<String> getTechnologies() {
         return sTechnologies.iterator();
     }
 
-    public void addTechnology(String technology) throws OnResearchTechnologyChangeListener.ResearchTechnologyChangeProhibitedException {
-        try {
-            sTechnologies.add(technology);
-            triggerTechnologyAdded(technology);
-        } catch (OnResearchTechnologyChangeListener.ResearchTechnologyChangeProhibitedException e) {
-            sTechnologies.remove(technology);
-            throw e;
-        }
+    public void addTechnology(String technology) {
+        sTechnologies.add(technology);
+        sResearchTechnologies.put(technology, this);
+        triggerTechnologyAdded(technology);
     }
 
-    public void removeTechnology(String technology) throws OnResearchTechnologyChangeListener.ResearchTechnologyChangeProhibitedException {
-        try {
-            sTechnologies.remove(technology);
-            triggerTechnologyRemoved(technology);
-        } catch (OnResearchTechnologyChangeListener.ResearchTechnologyChangeProhibitedException e) {
-            sTechnologies.add(technology);
-            throw e;
-        }
-
+    public void removeTechnology(String technology) {
+        sTechnologies.remove(technology);
+        sResearchTechnologies.remove(technology);
+        triggerTechnologyRemoved(technology);
     }
 
     public boolean hasTechnology(String technology) {
@@ -343,215 +629,159 @@ public class ResearchProject {
         this.sResearchDependencyChangeListeners.clear();
     }
 
-    public void triggerDependentAdded(ResearchProject dependent) throws OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException {
-        for (OnResearchDependencyChangeListener listener : this.sResearchDependencyChangeListeners) {
-            listener.onDependentAdded(this, dependent);
-        }
+    public Collection<ResearchProject> getDependents() {
+        return Collections.unmodifiableCollection(sDependents);
     }
 
-    public void triggerDependentRemoved(ResearchProject dependent) throws OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException {
-        for (OnResearchDependencyChangeListener listener : this.sResearchDependencyChangeListeners) {
-            listener.onDependentRemoved(this, dependent);
-        }
+    public void addDependent(ResearchProject dependent) {
+        sDependents.add(dependent);
+        dependent.sDependers.add(this);
+        this.triggerDependentAdded(dependent);
+        dependent.triggerDependerAdded(this);
     }
 
-    public void triggerDependerAdded(ResearchProject dependent) throws OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException {
-        for (OnResearchDependencyChangeListener listener : this.sResearchDependencyChangeListeners) {
-            listener.onDependerAdded(this, dependent);
-        }
-    }
-
-    public void triggerDependerRemoved(ResearchProject dependent) throws OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException {
-        for (OnResearchDependencyChangeListener listener : this.sResearchDependencyChangeListeners) {
-            listener.onDependerRemoved(this, dependent);
-        }
-    }
-
-    public Iterator<ResearchProject> getDependents() {
-        return sDependents.iterator();
-    }
-
-    public void addDependent(ResearchProject dependent) throws OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException {
-        try {
-            sDependents.add(dependent);
-            dependent.sDependers.add(this);
-            this.triggerDependentAdded(dependent);
-            dependent.triggerDependerAdded(this);
-        } catch (OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException e) {
-            sDependents.remove(dependent);
-            dependent.sDependers.remove(this);
-            throw e;
-        }
-    }
-
-    public void removeDependent(ResearchProject dependent) throws OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException {
-        try {
-            sDependents.remove(dependent);
-            dependent.sDependers.remove(this);
-            this.triggerDependentRemoved(dependent);
-            dependent.triggerDependerRemoved(this);
-        } catch (OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException e) {
-            sDependents.add(dependent);
-            dependent.sDependers.add(this);
-            throw e;
-        }
+    public void removeDependent(ResearchProject dependent) {
+        sDependents.remove(dependent);
+        dependent.sDependers.remove(this);
+        this.triggerDependentRemoved(dependent);
+        dependent.triggerDependerRemoved(this);
     }
 
     public boolean hasDependent(ResearchProject dependent) {
         return sDependents.contains(dependent);
     }
 
-    public Iterator<ResearchProject> getDependers() {
-        return sDependers.iterator();
+    public Collection<ResearchProject> getDependers() {
+        return Collections.unmodifiableCollection(sDependers);
     }
 
-    public void addDepender(ResearchProject depender) throws OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException {
-        try {
-            sDependers.add(depender);
-            depender.sDependents.add(this);
-            this.triggerDependerAdded(depender);
-            depender.triggerDependentAdded(this);
-        } catch (OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException e) {
-            sDependers.remove(depender);
-            depender.sDependents.remove(this);
-            throw e;
-        }
+    public void addDepender(ResearchProject depender) {
+        sDependers.add(depender);
+        depender.sDependents.add(this);
+        this.triggerDependerAdded(depender);
+        depender.triggerDependentAdded(this);
     }
 
-    public void removeDepender(ResearchProject depender) throws OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException {
-        try {
-            sDependers.remove(depender);
-            depender.sDependents.remove(this);
-            this.triggerDependerRemoved(depender);
-            depender.triggerDependentRemoved(this);
-        } catch (OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException e) {
-            sDependers.add(depender);
-            depender.sDependents.add(this);
-            throw e;
-        }
+    public void removeDepender(ResearchProject depender) {
+        sDependers.remove(depender);
+        depender.sDependents.remove(this);
+        this.triggerDependerRemoved(depender);
+        depender.triggerDependentRemoved(this);
     }
 
     public boolean hasDepender(ResearchProject depender) {
         return sDependers.contains(depender);
     }
 
-    public void addResearchStatusChangeListener(OnResearchStatusChangeListener listener) {
-        this.sResearchStatusChangeListeners.add(listener);
+    public void addResearchCompletedChangeListener(OnResearchCompletedChangeListener listener) {
+        this.sResearchCompletedChangeListeners.add(listener);
     }
 
-    public void removeResearchStatusChangeListener(OnResearchStatusChangeListener listener) {
-        this.sResearchStatusChangeListeners.remove(listener);
+    public void removeResearchCompletedChangeListener(OnResearchCompletedChangeListener listener) {
+        this.sResearchCompletedChangeListeners.remove(listener);
     }
 
-    public void clearResearchStatusChangeListeners() {
-        this.sResearchStatusChangeListeners.clear();
-    }
-
-    private void triggerOnCompletedChange() {
-        for (OnResearchStatusChangeListener listener : this.sResearchStatusChangeListeners) {
-            listener.onCompletedChange(this, this.mCompleted);
-        }
-    }
-
-    private void triggerOnGoalChange() {
-        for (OnResearchStatusChangeListener listener : this.sResearchStatusChangeListeners) {
-            listener.onGoalChange(this, this.mGoal);
-        }
-    }
-
-    private void triggerOnInPathChange() {
-        for (OnResearchStatusChangeListener listener : this.sResearchStatusChangeListeners) {
-            listener.onInPathChange(this, this.mInPath);
-        }
-    }
-
-    private void triggerOnPathNumberChange() {
-        for (OnResearchStatusChangeListener listener : this.sResearchStatusChangeListeners) {
-            listener.onPathNumberChange(this, mPathNumber);
-        }
-    }
-
-    private void triggerOnGoalNumberChange() {
-        for (OnResearchStatusChangeListener listener : this.sResearchStatusChangeListeners) {
-            listener.onGoalNumberChange(this, mGoalNumber);
-        }
+    public void clearResearchCompletedChangeListeners() {
+        this.sResearchCompletedChangeListeners.clear();
     }
 
     public String toString() {
         return "ResearchProject(\"" + this.sName + "\")";
     }
 
+    public void triggerTechnologyAdded(String technology) {
+        if (ResearchProject.canTrigger("triggerTechnologyAdded", this, new Class<?>[]{String.class}, technology)) {
+            for (OnResearchTechnologyChangeListener listener : this.sResearchTechnologyChangeListeners) {
+                listener.onTechnologyAdded(this, technology);
+            }
+        }
+    }
+
+    public void triggerTechnologyRemoved(String technology) {
+        if (ResearchProject.canTrigger("triggerTechnologyRemoved", this, new Class<?>[]{String.class}, technology)) {
+            for (OnResearchTechnologyChangeListener listener : this.sResearchTechnologyChangeListeners) {
+                listener.onTechnologyRemoved(this, technology);
+            }
+        }
+    }
+
+    public void triggerDependentAdded(ResearchProject dependent) {
+        if (ResearchProject.canTrigger("triggerDependentAdded", this, new Class<?>[]{
+                ResearchProject.class
+        }, dependent)) {
+            for (OnResearchDependencyChangeListener listener : this.sResearchDependencyChangeListeners) {
+                listener.onDependentAdded(this, dependent);
+            }
+        }
+    }
+
+    public void triggerDependentRemoved(ResearchProject dependent) {
+        if (ResearchProject.canTrigger("triggerDependentRemoved", this, new Class<?>[]{ResearchProject.class}, dependent)) {
+            for (OnResearchDependencyChangeListener listener : this.sResearchDependencyChangeListeners) {
+                listener.onDependentRemoved(this, dependent);
+            }
+        }
+    }
+
+    public void triggerDependerAdded(ResearchProject depender) {
+        if (ResearchProject.canTrigger("triggerDependerAdded", this, new Class<?>[]{ResearchProject.class}, depender)) {
+            for (OnResearchDependencyChangeListener listener : this.sResearchDependencyChangeListeners) {
+                listener.onDependerAdded(this, depender);
+            }
+        }
+    }
+
+    public void triggerDependerRemoved(ResearchProject depender) {
+        if (ResearchProject.canTrigger("triggerDependerRemoved", this, new Class<?>[]{ResearchProject.class}, depender)) {
+            for (OnResearchDependencyChangeListener listener : this.sResearchDependencyChangeListeners) {
+                listener.onDependerRemoved(this, depender);
+            }
+        }
+    }
+
+    private void triggerOnResearchCompletedChange() {
+        if (ResearchProject.canTrigger("triggerOnResearchCompletedChange", this, new Class<?>[]{})) {
+            for (OnResearchCompletedChangeListener listener : this.sResearchCompletedChangeListeners) {
+                listener.onResearchCompletedChange(this, this.mCompleted);
+            }
+        }
+    }
+
     @SuppressWarnings("UnusedParameters")
-    public interface OnResearchStatusChangeListener {
-        void onCompletedChange(ResearchProject project, boolean completed);
+    public interface OnResearchCompletedChangeListener {
+        void onResearchCompletedChange(ResearchProject project, boolean completed);
+    }
 
-        void onGoalChange(ResearchProject project, boolean goal);
+    @SuppressWarnings("UnusedParameters")
+    public interface OnResearchPathChangeListener {
+        void onResearchPathChange(List<ResearchProject> pathList, ResearchProject added, ResearchProject removed);
 
-        void onInPathChange(ResearchProject project, boolean inPath);
-
-        void onGoalNumberChange(ResearchProject project, int goalNumber);
-
-        void onPathNumberChange(ResearchProject project, int pathNumber);
+        void onResearchGoalsChange(List<ResearchProject> goalsList, ResearchProject added, ResearchProject removed);
     }
 
     @SuppressWarnings({"UnusedParameters", "RedundantThrows"})
     public interface OnResearchChangeListener {
-        void onResearchProjectAdded(ResearchProject project) throws ResearchChangeProhibitedException;
+        void onResearchProjectAdded(ResearchProject project);
 
-        void onResearchProjectRemoved(ResearchProject project) throws ResearchChangeProhibitedException;
-
-        @SuppressWarnings("unused")
-        class ResearchChangeProhibitedException extends Exception {
-            @SuppressWarnings("unused")
-            public ResearchChangeProhibitedException() {
-                super();
-            }
-
-            @SuppressWarnings("unused")
-            public ResearchChangeProhibitedException(String message) {
-                super(message);
-            }
-        }
+        void onResearchProjectRemoved(ResearchProject project);
     }
 
     @SuppressWarnings("UnusedParameters")
     public interface OnResearchDependencyChangeListener {
-        void onDependentAdded(ResearchProject project, ResearchProject dependent) throws ResearchDependencyChangeProhibitedException;
+        void onDependentAdded(ResearchProject project, ResearchProject dependent);
 
-        void onDependentRemoved(ResearchProject project, ResearchProject dependent) throws ResearchDependencyChangeProhibitedException;
+        void onDependentRemoved(ResearchProject project, ResearchProject dependent);
 
-        void onDependerAdded(ResearchProject project, ResearchProject depender) throws ResearchDependencyChangeProhibitedException;
+        void onDependerAdded(ResearchProject project, ResearchProject depender);
 
-        void onDependerRemoved(ResearchProject project, ResearchProject depender) throws ResearchDependencyChangeProhibitedException;
-
-        @SuppressWarnings("unused")
-        class ResearchDependencyChangeProhibitedException extends Exception {
-            @SuppressWarnings("unused")
-            public ResearchDependencyChangeProhibitedException() {
-                super();
-            }
-
-            @SuppressWarnings("unused")
-            public ResearchDependencyChangeProhibitedException(String message) {
-                super(message);
-            }
-        }
+        void onDependerRemoved(ResearchProject project, ResearchProject depender);
     }
 
+    @SuppressWarnings("UnusedParameters")
     public interface OnResearchTechnologyChangeListener {
-        void onTechnologyAdded(ResearchProject project, String technology) throws ResearchTechnologyChangeProhibitedException;
+        void onTechnologyAdded(ResearchProject project, String technology);
 
-        void onTechnologyRemoved(ResearchProject project, String technology) throws ResearchTechnologyChangeProhibitedException;
-
-        class ResearchTechnologyChangeProhibitedException extends Exception {
-            public ResearchTechnologyChangeProhibitedException() {
-                super();
-            }
-
-            public ResearchTechnologyChangeProhibitedException(String message) {
-                super(message);
-            }
-        }
+        void onTechnologyRemoved(ResearchProject project, String technology);
     }
 
     @SuppressWarnings("unused")
@@ -618,7 +848,7 @@ public class ResearchProject {
             return mName;
         }
 
-        public int next() throws ResearchTreeXmlParserException {
+        public int next() throws ResearchXmlParserException {
             int tag = 0;
             if (DEBUG) debug("ResearchProject", "> next()");
             while (mNextState != STATE_SUCCESS && mNextState != STATE_ERROR) {
@@ -712,33 +942,156 @@ public class ResearchProject {
                     }
 
                 } catch (XmlPullParserException | IOException e) {
-                    throw new ResearchTreeXmlParserException("Invalid XML Research Tree", e);
+                    throw new ResearchXmlParserException("Invalid XML Research Tree", e);
                 }
             }
             if (DEBUG)
                 debug("ResearchProject", "* next() throw new XmlPullParserException(\"Invalid XML Research Tree\")");
-            throw new ResearchTreeXmlParserException("Invalid XML Research Tree (tag " + tag + " at state " + mCurrentState + ")");
+            throw new ResearchXmlParserException("Invalid XML Research Tree (tag " + tag + " at state " + mCurrentState + ")");
         }
     }
 
     @SuppressWarnings("unused")
-    public static class ResearchTreeXmlParserException extends IOException {
+    public static class ResearchXmlParserException extends IOException {
         @SuppressWarnings("unused")
-        public ResearchTreeXmlParserException() {
+        public ResearchXmlParserException() {
         }
 
-        public ResearchTreeXmlParserException(String message) {
+        public ResearchXmlParserException(String message) {
             super(message);
         }
 
         @SuppressWarnings("SameParameterValue")
-        public ResearchTreeXmlParserException(String message, Throwable cause) {
+        public ResearchXmlParserException(String message, Throwable cause) {
             super(message, cause);
         }
 
         @SuppressWarnings("unused")
-        public ResearchTreeXmlParserException(Throwable cause) {
+        public ResearchXmlParserException(Throwable cause) {
             super(cause);
+        }
+    }
+
+    private static class InitialResearchXmlParser {
+        public static final int DONE             = 0;
+        public static final int RESEARCH_PROJECT = 1;
+        public static final int DEPENDENCY       = 2;
+        public static final int TECHNOLOGY       = 3;
+
+        private static final int TAG_START_DOCUMENT         = 1;
+        private static final int TAG_END_DOCUMENT           = 2;
+        private static final int TAG_START_INITIAL_RESEARCH = "initialresearch".hashCode();
+        private static final int TAG_END_INITIAL_RESEARCH   = TAG_START_INITIAL_RESEARCH + 1;
+        private static final int TAG_START_RESEARCH_PROJECT = "researchproject".hashCode();
+        private static final int TAG_END_RESEARCH_PROJECT   = TAG_START_RESEARCH_PROJECT + 1;
+        private static final int TAG_START_TECHNOLOGY       = "technology".hashCode();
+        private static final int TAG_END_TECHNOLOGY         = TAG_START_TECHNOLOGY + 1;
+
+        private final int STATE_START            = 0;
+        private final int STATE_SUCCESS          = 1;
+        private final int STATE_ERROR            = 2;
+        private final int STATE_INITIAL_RESEARCH = 3;
+        private final int STATE_RESEARCH_PROJECT = 4;
+        private final int STATE_TECHNOLOGY       = 5;
+
+        private final XmlPullParser sParser;
+        private       String        mName;
+
+        private int mCurrentState, mNextState;
+
+
+        public InitialResearchXmlParser(XmlPullParser parser) {
+            if (DEBUG)
+                debug("ResearchProject", "> InitialResearchXmlParser(" + parser + ")");
+            this.sParser = parser;
+            mCurrentState = mNextState = STATE_START;
+            if (DEBUG)
+                debug("ResearchProject", "< InitialResearchXmlParser(" + parser + ")");
+        }
+
+        public String getName() {
+            if (DEBUG) debug("ResearchProject", "> getName()");
+            if (DEBUG)
+                debug("ResearchProject", "< getName() returning \"" + mName + "\"");
+            return mName;
+        }
+
+        public int next() throws ResearchXmlParserException {
+            int tag = 0;
+            if (DEBUG) debug("ResearchProject", "> next()");
+            while (mNextState != STATE_SUCCESS && mNextState != STATE_ERROR) {
+                try {
+                    mCurrentState = mNextState;
+                    mNextState = STATE_ERROR;
+                    mName = null;
+                    tag = sParser.next();
+                    while (tag == XmlPullParser.TEXT) {
+                        tag = sParser.next();
+                    }
+                    switch (tag) {
+                        case XmlPullParser.START_DOCUMENT:
+                            tag = TAG_START_DOCUMENT;
+                            break;
+                        case XmlPullParser.END_DOCUMENT:
+                            tag = TAG_END_DOCUMENT;
+                            break;
+                        case XmlPullParser.START_TAG:
+                            tag = sParser.getName().toLowerCase().hashCode();
+                            mName = sParser.getAttributeValue(null, "name");
+                            break;
+                        case XmlPullParser.END_TAG:
+                            tag = sParser.getName().toLowerCase().hashCode() + 1;
+                            break;
+                        default:
+                            tag = 0; // NOTREACHED
+                    }
+
+                    switch (mCurrentState) {
+                        case STATE_START:
+                            if (tag == InitialResearchXmlParser.TAG_START_DOCUMENT) {
+                                mNextState = STATE_START;
+                            } else if (tag == InitialResearchXmlParser.TAG_END_DOCUMENT) {
+                                if (DEBUG)
+                                    debug("ResearchProject", "< next() returning DONE");
+                                return DONE;
+                            } else if (tag == InitialResearchXmlParser.TAG_START_INITIAL_RESEARCH) {
+                                mNextState = STATE_INITIAL_RESEARCH;
+                            }
+                            break;
+                        case STATE_INITIAL_RESEARCH:
+                            if (tag == InitialResearchXmlParser.TAG_END_INITIAL_RESEARCH) {
+                                mNextState = STATE_START;
+                            } else if (tag == InitialResearchXmlParser.TAG_START_RESEARCH_PROJECT) {
+                                mNextState = STATE_RESEARCH_PROJECT;
+                                if (DEBUG)
+                                    debug("ResearchProject", "< next() returning RESEARCH_PROJECT (\"" + mName + "\")");
+                                return RESEARCH_PROJECT;
+                            } else if (tag == InitialResearchXmlParser.TAG_START_TECHNOLOGY) {
+                                mNextState = STATE_TECHNOLOGY;
+                                if (DEBUG)
+                                    debug("ResearchProject", "< next() returning TECHNOLOGY (\"" + mName + "\")");
+                                return TECHNOLOGY;
+                            }
+                            break;
+                        case STATE_RESEARCH_PROJECT:
+                            if (tag == InitialResearchXmlParser.TAG_END_RESEARCH_PROJECT) {
+                                mNextState = STATE_INITIAL_RESEARCH;
+                            }
+                            break;
+                        case STATE_TECHNOLOGY:
+                            if (tag == InitialResearchXmlParser.TAG_END_TECHNOLOGY) {
+                                mNextState = STATE_INITIAL_RESEARCH;
+                            }
+                            break;
+                    }
+
+                } catch (XmlPullParserException | IOException e) {
+                    throw new ResearchXmlParserException("Invalid XML Research Tree", e);
+                }
+            }
+            if (DEBUG)
+                debug("ResearchProject", "* next() throw new XmlPullParserException(\"Invalid XML Research Tree\")");
+            throw new ResearchXmlParserException("Invalid XML Research Tree (tag " + tag + " at state " + mCurrentState + ")");
         }
     }
 }

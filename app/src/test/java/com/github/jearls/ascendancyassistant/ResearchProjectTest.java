@@ -1,10 +1,14 @@
 package com.github.jearls.ascendancyassistant;
 
+import android.annotation.SuppressLint;
 import android.util.Log;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.powermock.api.easymock.PowerMock;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -13,6 +17,8 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.util.Iterator;
 
+import static org.easymock.EasyMock.anyString;
+import static org.easymock.EasyMock.expect;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -61,6 +67,7 @@ public class ResearchProjectTest {
         return foo.toString();
     }
 
+    @SuppressLint("LogConditional")
     @Before
     public void mockLogClass() {
         PowerMock.mockStatic(Log.class);
@@ -71,11 +78,7 @@ public class ResearchProjectTest {
     @Before
     public void clearResearchProjects() {
         ResearchProject.clearResearchChangeListeners();
-        try {
-            ResearchProject.removeAllResearchProjects();
-        } catch (ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException e) {
-            /* ignore */
-        }
+        ResearchProject.clearResearchProjects();
     }
 
     private void assertResearchHasProjectCount(int count) {
@@ -94,12 +97,7 @@ public class ResearchProjectTest {
 
     private void assertNamedProjectHasDependentCount(String project, int count) {
         assertResearchHasProjectNamed(project);
-        Iterator<ResearchProject> pi = ResearchProject.getResearchProject(project).getDependents();
-        int found = 0;
-        while (pi.hasNext()) {
-            found += 1;
-            pi.next();
-        }
+        int found = ResearchProject.getResearchProject(project).getDependents().size();
         assertEquals("Expected " + count + " dependents, found " + found, count, found);
     }
 
@@ -111,12 +109,7 @@ public class ResearchProjectTest {
 
     private void assertNamedProjectHasDependerCount(String project, int count) {
         assertResearchHasProjectNamed(project);
-        Iterator<ResearchProject> pi = ResearchProject.getResearchProject(project).getDependers();
-        int found = 0;
-        while (pi.hasNext()) {
-            found += 1;
-            pi.next();
-        }
+        int found = ResearchProject.getResearchProject(project).getDependers().size();
         assertEquals("Expected " + count + " dependers, found " + found, count, found);
     }
 
@@ -145,7 +138,7 @@ public class ResearchProjectTest {
     }
 
     @Test
-    public void testResearchProject() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException {
+    public void testResearchProject() {
         new ResearchProject("project");
         assertResearchHasProjectNamed("project");
         assertNamedProjectHasDependentCount("project", 0);
@@ -154,7 +147,7 @@ public class ResearchProjectTest {
     }
 
     @Test
-    public void testUniqueResearchProjects() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException {
+    public void testUniqueResearchProjects() {
         new ResearchProject("project");
         new ResearchProject("project 2");
         assertResearchHasProjectCount(2);
@@ -163,28 +156,26 @@ public class ResearchProjectTest {
     }
 
     @Test(expected = ResearchProject.DuplicateResearchProjectException.class)
-    public void testDuplicateResearchProjects() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException {
+    public void testDuplicateResearchProjects() {
         new ResearchProject("project");
         new ResearchProject("project");
     }
 
     @Test
-    public void testResearchProjectParameters() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException {
+    public void testResearchProjectParameters() {
         ResearchProject researchProject = new ResearchProject("project");
         researchProject.setCompleted(true);
-        researchProject.setGoal(true);
-        researchProject.setInPath(true);
-        researchProject.setPathNumber(1);
-        researchProject.setGoalNumber(2);
+        researchProject.addToPath();
+        researchProject.addToGoals();
         assertEquals(researchProject.isCompleted(), true);
         assertEquals(researchProject.isGoal(), true);
         assertEquals(researchProject.isInPath(), true);
         assertEquals(researchProject.getPathNumber(), 1);
-        assertEquals(researchProject.getGoalNumber(), 2);
+        assertEquals(researchProject.getGoalNumber(), 1);
     }
 
     @Test
-    public void testResearchChangeListenerOnAdd() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException {
+    public void testResearchChangeListenerOnAdd() {
         ResearchChangeListener listener = new ResearchChangeListener();
         ResearchProject.addResearchChangeListener(listener);
         new ResearchProject("project");
@@ -193,7 +184,7 @@ public class ResearchProjectTest {
     }
 
     @Test
-    public void testResearchChangeListenerOnRemove() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException {
+    public void testResearchChangeListenerOnRemove() {
         ResearchProject researchProject = new ResearchProject("project");
         ResearchChangeListener listener = new ResearchChangeListener();
         ResearchProject.addResearchChangeListener(listener);
@@ -202,25 +193,8 @@ public class ResearchProjectTest {
         assertEquals(listener.projectsRemoved, 1);
     }
 
-    @Test(expected = ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException.class)
-    public void testResearchChangeListenerOnProhibitedAdd() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException {
-        ResearchChangeListener listener = new ResearchChangeListener();
-        listener.prohibit = true;
-        ResearchProject.addResearchChangeListener(listener);
-        new ResearchProject("project");
-    }
-
-    @Test(expected = ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException.class)
-    public void testResearchChangeListenerOnProhibitedRemove() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException {
-        ResearchProject researchProject = new ResearchProject("project");
-        ResearchChangeListener listener = new ResearchChangeListener();
-        listener.prohibit = true;
-        ResearchProject.addResearchChangeListener(listener);
-        ResearchProject.removeResearchProject(researchProject);
-    }
-
     @Test
-    public void testRemoveResearchChangeListener() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException {
+    public void testRemoveResearchChangeListener() {
         ResearchChangeListener listener = new ResearchChangeListener();
         ResearchProject.addResearchChangeListener(listener);
         ResearchProject researchProject = new ResearchProject("project");
@@ -231,7 +205,7 @@ public class ResearchProjectTest {
     }
 
     @Test
-    public void testResearchTechnologyChangeListenerOnAddTechnology() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException, ResearchProject.OnResearchTechnologyChangeListener.ResearchTechnologyChangeProhibitedException {
+    public void testResearchTechnologyChangeListenerOnAddTechnology() {
         ResearchProject researchProject = new ResearchProject("project");
         ResearchTechnologyChangeListener listener = new ResearchTechnologyChangeListener();
         researchProject.addResearchTechnologyChangeListener(listener);
@@ -241,7 +215,7 @@ public class ResearchProjectTest {
     }
 
     @Test
-    public void testResearchTechnologyChangeListenerOnRemoveTechnology() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException, ResearchProject.OnResearchTechnologyChangeListener.ResearchTechnologyChangeProhibitedException {
+    public void testResearchTechnologyChangeListenerOnRemoveTechnology() {
         ResearchProject researchProject = new ResearchProject("project");
         researchProject.addTechnology("tech");
         ResearchTechnologyChangeListener listener = new ResearchTechnologyChangeListener();
@@ -251,27 +225,8 @@ public class ResearchProjectTest {
         assertEquals(listener.technologiesRemoved, 1);
     }
 
-    @Test(expected = ResearchProject.OnResearchTechnologyChangeListener.ResearchTechnologyChangeProhibitedException.class)
-    public void testResearchTechnologyChangeListenerOnAddTechnologyProhibited() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException, ResearchProject.OnResearchTechnologyChangeListener.ResearchTechnologyChangeProhibitedException {
-        ResearchProject researchProject = new ResearchProject("project");
-        ResearchTechnologyChangeListener listener = new ResearchTechnologyChangeListener();
-        listener.prohibit = true;
-        researchProject.addResearchTechnologyChangeListener(listener);
-        researchProject.addTechnology("tech");
-    }
-
-    @Test(expected = ResearchProject.OnResearchTechnologyChangeListener.ResearchTechnologyChangeProhibitedException.class)
-    public void testResearchTechnologyChangeListenerOnRemoveTechnologyProhibited() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException, ResearchProject.OnResearchTechnologyChangeListener.ResearchTechnologyChangeProhibitedException {
-        ResearchProject researchProject = new ResearchProject("project");
-        researchProject.addTechnology("tech");
-        ResearchTechnologyChangeListener listener = new ResearchTechnologyChangeListener();
-        listener.prohibit = true;
-        researchProject.addResearchTechnologyChangeListener(listener);
-        researchProject.removeTechnology("tech");
-    }
-
     @Test
-    public void testRemoveResearchTechnologyChangeListener() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException, ResearchProject.OnResearchTechnologyChangeListener.ResearchTechnologyChangeProhibitedException {
+    public void testRemoveResearchTechnologyChangeListener() {
         ResearchProject researchProject = new ResearchProject("project");
         ResearchTechnologyChangeListener listener = new ResearchTechnologyChangeListener();
         researchProject.addResearchTechnologyChangeListener(listener);
@@ -283,7 +238,7 @@ public class ResearchProjectTest {
     }
 
     @Test
-    public void testResearchDependencyChangeListenerOnAddDependent() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException, ResearchProject.OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException {
+    public void testResearchDependencyChangeListenerOnAddDependent() {
         ResearchProject researchProject1 = new ResearchProject("project 1");
         ResearchProject researchProject2 = new ResearchProject("project 2");
         ResearchDependencyChangeListener listener = new ResearchDependencyChangeListener();
@@ -296,7 +251,7 @@ public class ResearchProjectTest {
     }
 
     @Test
-    public void testResearchDependencyChangeListenerOnAddDepender() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException, ResearchProject.OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException {
+    public void testResearchDependencyChangeListenerOnAddDepender() {
         ResearchProject researchProject1 = new ResearchProject("project 1");
         ResearchProject researchProject2 = new ResearchProject("project 2");
         ResearchDependencyChangeListener listener = new ResearchDependencyChangeListener();
@@ -309,7 +264,7 @@ public class ResearchProjectTest {
     }
 
     @Test
-    public void testResearchDependencyChangeListenerOnRemoveDependent() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException, ResearchProject.OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException {
+    public void testResearchDependencyChangeListenerOnRemoveDependent() {
         ResearchProject researchProject1 = new ResearchProject("project 1");
         ResearchProject researchProject2 = new ResearchProject("project 2");
         researchProject1.addDependent(researchProject2);
@@ -323,7 +278,7 @@ public class ResearchProjectTest {
     }
 
     @Test
-    public void testResearchDependencyChangeListenerOnRemoveDepender() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException, ResearchProject.OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException {
+    public void testResearchDependencyChangeListenerOnRemoveDepender() {
         ResearchProject researchProject1 = new ResearchProject("project 1");
         ResearchProject researchProject2 = new ResearchProject("project 2");
         researchProject1.addDepender(researchProject2);
@@ -336,50 +291,8 @@ public class ResearchProjectTest {
         assertEquals(listener.dependersRemoved, 1);
     }
 
-    @Test(expected = ResearchProject.OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException.class)
-    public void testResearchDependencyChangeListenerOnAddDependentProhibited() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException, ResearchProject.OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException {
-        ResearchProject researchProject1 = new ResearchProject("project 1");
-        ResearchProject researchProject2 = new ResearchProject("project 2");
-        ResearchDependencyChangeListener listener = new ResearchDependencyChangeListener();
-        listener.prohibit = true;
-        researchProject1.addResearchDependencyChangeListener(listener);
-        researchProject1.addDependent(researchProject2);
-    }
-
-    @Test(expected = ResearchProject.OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException.class)
-    public void testResearchDependencyChangeListenerOnAddDependerProhibited() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException, ResearchProject.OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException {
-        ResearchProject researchProject1 = new ResearchProject("project 1");
-        ResearchProject researchProject2 = new ResearchProject("project 2");
-        ResearchDependencyChangeListener listener = new ResearchDependencyChangeListener();
-        listener.prohibit = true;
-        researchProject1.addResearchDependencyChangeListener(listener);
-        researchProject1.addDepender(researchProject2);
-    }
-
-    @Test(expected = ResearchProject.OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException.class)
-    public void testResearchDependencyChangeListenerOnRemoveDependentProhibited() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException, ResearchProject.OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException {
-        ResearchProject researchProject1 = new ResearchProject("project 1");
-        ResearchProject researchProject2 = new ResearchProject("project 2");
-        researchProject1.addDependent(researchProject2);
-        ResearchDependencyChangeListener listener = new ResearchDependencyChangeListener();
-        listener.prohibit = true;
-        researchProject1.addResearchDependencyChangeListener(listener);
-        researchProject1.removeDependent(researchProject2);
-    }
-
-    @Test(expected = ResearchProject.OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException.class)
-    public void testResearchDependencyChangeListenerOnRemoveDependerProhibited() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException, ResearchProject.OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException {
-        ResearchProject researchProject1 = new ResearchProject("project 1");
-        ResearchProject researchProject2 = new ResearchProject("project 2");
-        researchProject1.addDepender(researchProject2);
-        ResearchDependencyChangeListener listener = new ResearchDependencyChangeListener();
-        listener.prohibit = true;
-        researchProject1.addResearchDependencyChangeListener(listener);
-        researchProject1.removeDepender(researchProject2);
-    }
-
     @Test
-    public void testRemoveResearchDependencyChangeListener() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException, ResearchProject.OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException {
+    public void testRemoveResearchDependencyChangeListener() {
         ResearchProject researchProject1 = new ResearchProject("project 1");
         ResearchProject researchProject2 = new ResearchProject("project 2");
         ResearchDependencyChangeListener listener = new ResearchDependencyChangeListener();
@@ -392,130 +305,30 @@ public class ResearchProjectTest {
     }
 
     @Test
-    public void testResearchStatusChangeListenerOnChangeCompleted() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException {
-        ResearchProject researchProject = new ResearchProject("project");
-        ResearchStatusChangeListener listener = new ResearchStatusChangeListener();
-        researchProject.addResearchStatusChangeListener(listener);
+    public void testResearchCompletedChangeListener() {
+        ResearchProject                 researchProject = new ResearchProject("project");
+        ResearchCompletedChangeListener listener        = new ResearchCompletedChangeListener();
+        researchProject.addResearchCompletedChangeListener(listener);
         researchProject.setCompleted(!researchProject.isCompleted());
         assertEquals(listener.countCompletedChange, 1);
-        assertEquals(listener.countGoalChange, 0);
-        assertEquals(listener.countInPathChange, 0);
-        assertEquals(listener.countGoalNumberChange, 0);
-        assertEquals(listener.countPathNumberChange, 0);
         researchProject.setCompleted(researchProject.isCompleted());
         assertEquals(listener.countCompletedChange, 1);
-        assertEquals(listener.countGoalChange, 0);
-        assertEquals(listener.countInPathChange, 0);
-        assertEquals(listener.countGoalNumberChange, 0);
-        assertEquals(listener.countPathNumberChange, 0);
     }
 
     @Test
-    public void testResearchStatusChangeListenerOnChangeGoal() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException {
-        ResearchProject researchProject = new ResearchProject("project");
-        ResearchStatusChangeListener listener = new ResearchStatusChangeListener();
-        researchProject.addResearchStatusChangeListener(listener);
-        researchProject.setGoal(!researchProject.isGoal());
-        assertEquals(listener.countCompletedChange, 0);
-        assertEquals(listener.countGoalChange, 1);
-        assertEquals(listener.countInPathChange, 0);
-        assertEquals(listener.countGoalNumberChange, 0);
-        assertEquals(listener.countPathNumberChange, 0);
-        researchProject.setGoal(researchProject.isGoal());
-        assertEquals(listener.countCompletedChange, 0);
-        assertEquals(listener.countGoalChange, 1);
-        assertEquals(listener.countInPathChange, 0);
-        assertEquals(listener.countGoalNumberChange, 0);
-        assertEquals(listener.countPathNumberChange, 0);
-    }
-
-    @Test
-    public void testResearchStatusChangeListenerOnChangeInPath() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException {
-        ResearchProject researchProject = new ResearchProject("project");
-        ResearchStatusChangeListener listener = new ResearchStatusChangeListener();
-        researchProject.addResearchStatusChangeListener(listener);
-        researchProject.setInPath(!researchProject.isInPath());
-        assertEquals(listener.countCompletedChange, 0);
-        assertEquals(listener.countGoalChange, 0);
-        assertEquals(listener.countInPathChange, 1);
-        assertEquals(listener.countGoalNumberChange, 0);
-        assertEquals(listener.countPathNumberChange, 0);
-        researchProject.setInPath(researchProject.isInPath());
-        assertEquals(listener.countCompletedChange, 0);
-        assertEquals(listener.countGoalChange, 0);
-        assertEquals(listener.countInPathChange, 1);
-        assertEquals(listener.countGoalNumberChange, 0);
-        assertEquals(listener.countPathNumberChange, 0);
-    }
-
-    @Test
-    public void testResearchStatusChangeListenerOnChangeGoalNumber() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException {
-        ResearchProject researchProject = new ResearchProject("project");
-        ResearchStatusChangeListener listener = new ResearchStatusChangeListener();
-        researchProject.addResearchStatusChangeListener(listener);
-        researchProject.setGoalNumber(1 + researchProject.getGoalNumber());
-        assertEquals(listener.countCompletedChange, 0);
-        assertEquals(listener.countGoalChange, 0);
-        assertEquals(listener.countInPathChange, 0);
-        assertEquals(listener.countGoalNumberChange, 1);
-        assertEquals(listener.countPathNumberChange, 0);
-        researchProject.setGoalNumber(researchProject.getGoalNumber());
-        assertEquals(listener.countCompletedChange, 0);
-        assertEquals(listener.countGoalChange, 0);
-        assertEquals(listener.countInPathChange, 0);
-        assertEquals(listener.countGoalNumberChange, 1);
-        assertEquals(listener.countPathNumberChange, 0);
-    }
-
-    @Test
-    public void testResearchStatusChangeListenerOnChangePathNumber() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException {
-        ResearchProject researchProject = new ResearchProject("project");
-        ResearchStatusChangeListener listener = new ResearchStatusChangeListener();
-        researchProject.addResearchStatusChangeListener(listener);
-        researchProject.setPathNumber(1 + researchProject.getPathNumber());
-        assertEquals(listener.countCompletedChange, 0);
-        assertEquals(listener.countGoalChange, 0);
-        assertEquals(listener.countInPathChange, 0);
-        assertEquals(listener.countGoalNumberChange, 0);
-        assertEquals(listener.countPathNumberChange, 1);
-        researchProject.setPathNumber(researchProject.getPathNumber());
-        assertEquals(listener.countCompletedChange, 0);
-        assertEquals(listener.countGoalChange, 0);
-        assertEquals(listener.countInPathChange, 0);
-        assertEquals(listener.countGoalNumberChange, 0);
-        assertEquals(listener.countPathNumberChange, 1);
-    }
-
-    @Test
-    public void testRemoveResearchStatusChangeListener() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException {
-        ResearchProject researchProject = new ResearchProject("project");
-        ResearchStatusChangeListener listener = new ResearchStatusChangeListener();
-        researchProject.addResearchStatusChangeListener(listener);
+    public void testRemoveResearchStatusChangeListener() {
+        ResearchProject                 researchProject = new ResearchProject("project");
+        ResearchCompletedChangeListener listener        = new ResearchCompletedChangeListener();
+        researchProject.addResearchCompletedChangeListener(listener);
         researchProject.setCompleted(!researchProject.isCompleted());
-        researchProject.setGoal(!researchProject.isGoal());
-        researchProject.setInPath(!researchProject.isInPath());
-        researchProject.setGoalNumber(1 + researchProject.getGoalNumber());
-        researchProject.setPathNumber(1 + researchProject.getPathNumber());
         assertEquals(listener.countCompletedChange, 1);
-        assertEquals(listener.countGoalChange, 1);
-        assertEquals(listener.countInPathChange, 1);
-        assertEquals(listener.countGoalNumberChange, 1);
-        assertEquals(listener.countPathNumberChange, 1);
-        researchProject.removeResearchStatusChangeListener(listener);
+        researchProject.removeResearchCompletedChangeListener(listener);
         researchProject.setCompleted(!researchProject.isCompleted());
-        researchProject.setGoal(!researchProject.isGoal());
-        researchProject.setInPath(!researchProject.isInPath());
-        researchProject.setGoalNumber(1 + researchProject.getGoalNumber());
-        researchProject.setPathNumber(1 + researchProject.getPathNumber());
         assertEquals(listener.countCompletedChange, 1);
-        assertEquals(listener.countGoalChange, 1);
-        assertEquals(listener.countInPathChange, 1);
-        assertEquals(listener.countGoalNumberChange, 1);
-        assertEquals(listener.countPathNumberChange, 1);
     }
 
     @Test
-    public void testEmptyDocument() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException, ResearchProject.OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException, ResearchProject.ResearchTreeXmlParserException, ResearchProject.OnResearchTechnologyChangeListener.ResearchTechnologyChangeProhibitedException {
+    public void testEmptyDocument() throws ResearchProject.ResearchXmlParserException {
         DummyXmlEvent[] events = {
                 new DummyXmlEndDocument(),
         };
@@ -527,7 +340,7 @@ public class ResearchProjectTest {
 ////////////////////////////////////////////////////////////////////////
 
     @Test
-    public void testEmptyDocumentWithStartDocumentEvent() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException, ResearchProject.OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException, ResearchProject.ResearchTreeXmlParserException, ResearchProject.OnResearchTechnologyChangeListener.ResearchTechnologyChangeProhibitedException {
+    public void testEmptyDocumentWithStartDocumentEvent() throws ResearchProject.ResearchXmlParserException {
         DummyXmlEvent[] events = {
                 new DummyXmlStartDocument(),
                 new DummyXmlEndDocument(),
@@ -538,7 +351,7 @@ public class ResearchProjectTest {
     }
 
     @Test
-    public void testResearchTreeEmpty() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException, ResearchProject.OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException, ResearchProject.ResearchTreeXmlParserException, ResearchProject.OnResearchTechnologyChangeListener.ResearchTechnologyChangeProhibitedException {
+    public void testResearchTreeEmpty() throws ResearchProject.ResearchXmlParserException {
         DummyXmlEvent[] events = {
                 new DummyXmlEmptyStartTag("ResearchTree"),
                 new DummyXmlEndTag("ResearchTree"),
@@ -550,7 +363,7 @@ public class ResearchProjectTest {
     }
 
     @Test
-    public void testResearchTreeWithTextContent() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException, ResearchProject.OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException, ResearchProject.ResearchTreeXmlParserException, ResearchProject.OnResearchTechnologyChangeListener.ResearchTechnologyChangeProhibitedException {
+    public void testResearchTreeWithTextContent() throws ResearchProject.ResearchXmlParserException {
         DummyXmlEvent[] events = {
                 new DummyXmlStartTag("ResearchTree"),
                 new DummyXmlText("This is some text"),
@@ -563,7 +376,7 @@ public class ResearchProjectTest {
     }
 
     @Test
-    public void testResearchTreeWithSingleProject() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException, ResearchProject.OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException, ResearchProject.ResearchTreeXmlParserException, ResearchProject.OnResearchTechnologyChangeListener.ResearchTechnologyChangeProhibitedException {
+    public void testResearchTreeWithSingleProject() throws ResearchProject.ResearchXmlParserException {
         DummyXmlEvent[] events = {
                 new DummyXmlStartTag("ResearchTree"),
                 new DummyXmlEmptyStartTag("ResearchProject", new String[]{"name", "project"}),
@@ -581,7 +394,7 @@ public class ResearchProjectTest {
     }
 
     @Test
-    public void testResearchTreeWithEmptyRequirements() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException, ResearchProject.OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException, ResearchProject.ResearchTreeXmlParserException, ResearchProject.OnResearchTechnologyChangeListener.ResearchTechnologyChangeProhibitedException {
+    public void testResearchTreeWithEmptyRequirements() throws ResearchProject.ResearchXmlParserException {
         DummyXmlEvent[] events = {
                 new DummyXmlStartTag("ResearchTree"),
                 new DummyXmlStartTag("ResearchProject", new String[]{"name", "project"}),
@@ -601,7 +414,7 @@ public class ResearchProjectTest {
     }
 
     @Test
-    public void testResearchTreeWithEmptyTechnologies() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException, ResearchProject.OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException, ResearchProject.ResearchTreeXmlParserException, ResearchProject.OnResearchTechnologyChangeListener.ResearchTechnologyChangeProhibitedException {
+    public void testResearchTreeWithEmptyTechnologies() throws ResearchProject.ResearchXmlParserException {
         DummyXmlEvent[] events = {
                 new DummyXmlStartTag("ResearchTree"),
                 new DummyXmlStartTag("ResearchProject", new String[]{"name", "project"}),
@@ -621,7 +434,7 @@ public class ResearchProjectTest {
     }
 
     @Test
-    public void testResearchTreeWithRequirement() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException, ResearchProject.OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException, ResearchProject.ResearchTreeXmlParserException, ResearchProject.OnResearchTechnologyChangeListener.ResearchTechnologyChangeProhibitedException {
+    public void testResearchTreeWithRequirement() throws ResearchProject.ResearchXmlParserException {
         DummyXmlEvent[] events = {
                 new DummyXmlStartTag("ResearchTree"),
                 new DummyXmlEmptyStartTag("ResearchProject", new String[]{"name", "project"}),
@@ -651,7 +464,7 @@ public class ResearchProjectTest {
     }
 
     @Test
-    public void testResearchTreeWithTechnology() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException, ResearchProject.OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException, ResearchProject.ResearchTreeXmlParserException, ResearchProject.OnResearchTechnologyChangeListener.ResearchTechnologyChangeProhibitedException {
+    public void testResearchTreeWithTechnology() throws ResearchProject.ResearchXmlParserException {
         DummyXmlEvent[] events = {
                 new DummyXmlStartTag("ResearchTree"),
                 new DummyXmlStartTag("ResearchProject", new String[]{"name", "project"}),
@@ -674,7 +487,7 @@ public class ResearchProjectTest {
     }
 
     @Test
-    public void testResearchTreeWithComplexRequirements() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException, ResearchProject.OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException, ResearchProject.ResearchTreeXmlParserException, ResearchProject.OnResearchTechnologyChangeListener.ResearchTechnologyChangeProhibitedException {
+    public void testResearchTreeWithComplexRequirements() throws ResearchProject.ResearchXmlParserException {
         DummyXmlEvent[] events = {
                 new DummyXmlStartTag("ResearchTree"),
                 new DummyXmlEmptyStartTag("ResearchProject", new String[]{"name", "p1"}),
@@ -748,7 +561,7 @@ public class ResearchProjectTest {
     }
 
     @Test
-    public void testResearchTreeWithRequirementBeforeProject() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException, ResearchProject.OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException, ResearchProject.ResearchTreeXmlParserException, ResearchProject.OnResearchTechnologyChangeListener.ResearchTechnologyChangeProhibitedException {
+    public void testResearchTreeWithRequirementBeforeProject() throws ResearchProject.ResearchXmlParserException {
         DummyXmlEvent[] events = {
                 new DummyXmlStartTag("ResearchTree"),
                 new DummyXmlEmptyStartTag("ResearchProject", new String[]{"name", "project"}),
@@ -777,16 +590,16 @@ public class ResearchProjectTest {
         assertNamedProjectHasTechnologyCount("project 2", 0);
     }
 
-    @Test(expected = ResearchProject.ResearchTreeXmlParserException.class)
-    public void testResearchTreeNoDocument() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException, ResearchProject.OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException, ResearchProject.ResearchTreeXmlParserException, ResearchProject.OnResearchTechnologyChangeListener.ResearchTechnologyChangeProhibitedException {
+    @Test(expected = ResearchProject.ResearchXmlParserException.class)
+    public void testResearchTreeNoDocument() throws ResearchProject.ResearchXmlParserException {
         DummyXmlEvent[] events = {
         };
         XmlPullParser xpp = new DummyXmlPullParser(events);
         ResearchProject.loadXmlResearchTree(xpp);
     }
 
-    @Test(expected = ResearchProject.ResearchTreeXmlParserException.class)
-    public void testResearchTreeNoEndDocument() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException, ResearchProject.OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException, ResearchProject.ResearchTreeXmlParserException, ResearchProject.OnResearchTechnologyChangeListener.ResearchTechnologyChangeProhibitedException {
+    @Test(expected = ResearchProject.ResearchXmlParserException.class)
+    public void testResearchTreeNoEndDocument() throws ResearchProject.ResearchXmlParserException {
         DummyXmlEvent[] events = {
                 new DummyXmlStartTag("ResearchTree"),
                 new DummyXmlEndTag("ResearchTree"),
@@ -795,8 +608,8 @@ public class ResearchProjectTest {
         ResearchProject.loadXmlResearchTree(xpp);
     }
 
-    @Test(expected = ResearchProject.ResearchTreeXmlParserException.class)
-    public void testResearchTreeInvalidContent() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException, ResearchProject.OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException, ResearchProject.ResearchTreeXmlParserException, ResearchProject.OnResearchTechnologyChangeListener.ResearchTechnologyChangeProhibitedException {
+    @Test(expected = ResearchProject.ResearchXmlParserException.class)
+    public void testResearchTreeInvalidContent() throws ResearchProject.ResearchXmlParserException {
         DummyXmlEvent[] events = {
                 new DummyXmlStartTag("ResearchTree"),
                 new DummyXmlInvalidContent("Invalid Content"),
@@ -807,8 +620,8 @@ public class ResearchProjectTest {
         ResearchProject.loadXmlResearchTree(xpp);
     }
 
-    @Test(expected = ResearchProject.ResearchTreeXmlParserException.class)
-    public void testResearchTreeNoEndResearchTree() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException, ResearchProject.OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException, ResearchProject.ResearchTreeXmlParserException, ResearchProject.OnResearchTechnologyChangeListener.ResearchTechnologyChangeProhibitedException {
+    @Test(expected = ResearchProject.ResearchXmlParserException.class)
+    public void testResearchTreeNoEndResearchTree() throws ResearchProject.ResearchXmlParserException {
         DummyXmlEvent[] events = {
                 new DummyXmlStartTag("ResearchTree"),
                 new DummyXmlEndDocument(),
@@ -817,8 +630,8 @@ public class ResearchProjectTest {
         ResearchProject.loadXmlResearchTree(xpp);
     }
 
-    @Test(expected = ResearchProject.ResearchTreeXmlParserException.class)
-    public void testResearchTreeExtraEndResearchTree() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException, ResearchProject.OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException, ResearchProject.ResearchTreeXmlParserException, ResearchProject.OnResearchTechnologyChangeListener.ResearchTechnologyChangeProhibitedException {
+    @Test(expected = ResearchProject.ResearchXmlParserException.class)
+    public void testResearchTreeExtraEndResearchTree() throws ResearchProject.ResearchXmlParserException {
         DummyXmlEvent[] events = {
                 new DummyXmlStartTag("ResearchTree"),
                 new DummyXmlEndTag("ResearchTree"),
@@ -829,8 +642,8 @@ public class ResearchProjectTest {
         ResearchProject.loadXmlResearchTree(xpp);
     }
 
-    @Test(expected = ResearchProject.ResearchTreeXmlParserException.class)
-    public void testResearchTreeNoEndResearchProject() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException, ResearchProject.OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException, ResearchProject.ResearchTreeXmlParserException, ResearchProject.OnResearchTechnologyChangeListener.ResearchTechnologyChangeProhibitedException {
+    @Test(expected = ResearchProject.ResearchXmlParserException.class)
+    public void testResearchTreeNoEndResearchProject() throws ResearchProject.ResearchXmlParserException {
         DummyXmlEvent[] events = {
                 new DummyXmlStartTag("ResearchTree"),
                 new DummyXmlStartTag("ResearchProject", new String[]{"name", "project"}),
@@ -841,8 +654,8 @@ public class ResearchProjectTest {
         ResearchProject.loadXmlResearchTree(xpp);
     }
 
-    @Test(expected = ResearchProject.ResearchTreeXmlParserException.class)
-    public void testResearchTreeExtraEndResearchProject() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException, ResearchProject.OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException, ResearchProject.ResearchTreeXmlParserException, ResearchProject.OnResearchTechnologyChangeListener.ResearchTechnologyChangeProhibitedException {
+    @Test(expected = ResearchProject.ResearchXmlParserException.class)
+    public void testResearchTreeExtraEndResearchProject() throws ResearchProject.ResearchXmlParserException {
         DummyXmlEvent[] events = {
                 new DummyXmlStartTag("ResearchTree"),
                 new DummyXmlStartTag("ResearchProject", new String[]{"name", "project"}),
@@ -855,8 +668,8 @@ public class ResearchProjectTest {
         ResearchProject.loadXmlResearchTree(xpp);
     }
 
-    @Test(expected = ResearchProject.ResearchTreeXmlParserException.class)
-    public void testResearchTreeNoEndRequirements() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException, ResearchProject.OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException, ResearchProject.ResearchTreeXmlParserException, ResearchProject.OnResearchTechnologyChangeListener.ResearchTechnologyChangeProhibitedException {
+    @Test(expected = ResearchProject.ResearchXmlParserException.class)
+    public void testResearchTreeNoEndRequirements() throws ResearchProject.ResearchXmlParserException {
         DummyXmlEvent[] events = {
                 new DummyXmlStartTag("ResearchTree"),
                 new DummyXmlStartTag("ResearchProject", new String[]{"name", "project"}),
@@ -869,8 +682,8 @@ public class ResearchProjectTest {
         ResearchProject.loadXmlResearchTree(xpp);
     }
 
-    @Test(expected = ResearchProject.ResearchTreeXmlParserException.class)
-    public void testResearchTreeExtraEndRequirements() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException, ResearchProject.OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException, ResearchProject.ResearchTreeXmlParserException, ResearchProject.OnResearchTechnologyChangeListener.ResearchTechnologyChangeProhibitedException {
+    @Test(expected = ResearchProject.ResearchXmlParserException.class)
+    public void testResearchTreeExtraEndRequirements() throws ResearchProject.ResearchXmlParserException {
         DummyXmlEvent[] events = {
                 new DummyXmlStartTag("ResearchTree"),
                 new DummyXmlStartTag("ResearchProject", new String[]{"name", "project"}),
@@ -885,8 +698,8 @@ public class ResearchProjectTest {
         ResearchProject.loadXmlResearchTree(xpp);
     }
 
-    @Test(expected = ResearchProject.ResearchTreeXmlParserException.class)
-    public void testResearchTreeNoEndRequires() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException, ResearchProject.OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException, ResearchProject.ResearchTreeXmlParserException, ResearchProject.OnResearchTechnologyChangeListener.ResearchTechnologyChangeProhibitedException {
+    @Test(expected = ResearchProject.ResearchXmlParserException.class)
+    public void testResearchTreeNoEndRequires() throws ResearchProject.ResearchXmlParserException {
         DummyXmlEvent[] events = {
                 new DummyXmlStartTag("ResearchTree"),
                 new DummyXmlStartTag("ResearchProject", new String[]{"name", "project"}),
@@ -901,8 +714,8 @@ public class ResearchProjectTest {
         ResearchProject.loadXmlResearchTree(xpp);
     }
 
-    @Test(expected = ResearchProject.ResearchTreeXmlParserException.class)
-    public void testResearchTreeExtraEndRequires() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException, ResearchProject.OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException, ResearchProject.ResearchTreeXmlParserException, ResearchProject.OnResearchTechnologyChangeListener.ResearchTechnologyChangeProhibitedException {
+    @Test(expected = ResearchProject.ResearchXmlParserException.class)
+    public void testResearchTreeExtraEndRequires() throws ResearchProject.ResearchXmlParserException {
         DummyXmlEvent[] events = {
                 new DummyXmlStartTag("ResearchTree"),
                 new DummyXmlStartTag("ResearchProject", new String[]{"name", "project"}),
@@ -919,8 +732,8 @@ public class ResearchProjectTest {
         ResearchProject.loadXmlResearchTree(xpp);
     }
 
-    @Test(expected = ResearchProject.ResearchTreeXmlParserException.class)
-    public void testResearchTreeNoEndTechnologies() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException, ResearchProject.OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException, ResearchProject.ResearchTreeXmlParserException, ResearchProject.OnResearchTechnologyChangeListener.ResearchTechnologyChangeProhibitedException {
+    @Test(expected = ResearchProject.ResearchXmlParserException.class)
+    public void testResearchTreeNoEndTechnologies() throws ResearchProject.ResearchXmlParserException {
         DummyXmlEvent[] events = {
                 new DummyXmlStartTag("ResearchTree"),
                 new DummyXmlStartTag("ResearchProject", new String[]{"name", "project"}),
@@ -933,8 +746,8 @@ public class ResearchProjectTest {
         ResearchProject.loadXmlResearchTree(xpp);
     }
 
-    @Test(expected = ResearchProject.ResearchTreeXmlParserException.class)
-    public void testResearchTreeExtraEndTechnologies() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException, ResearchProject.OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException, ResearchProject.ResearchTreeXmlParserException, ResearchProject.OnResearchTechnologyChangeListener.ResearchTechnologyChangeProhibitedException {
+    @Test(expected = ResearchProject.ResearchXmlParserException.class)
+    public void testResearchTreeExtraEndTechnologies() throws ResearchProject.ResearchXmlParserException {
         DummyXmlEvent[] events = {
                 new DummyXmlStartTag("ResearchTree"),
                 new DummyXmlStartTag("ResearchProject", new String[]{"name", "project"}),
@@ -949,8 +762,8 @@ public class ResearchProjectTest {
         ResearchProject.loadXmlResearchTree(xpp);
     }
 
-    @Test(expected = ResearchProject.ResearchTreeXmlParserException.class)
-    public void testResearchTreeNoEndTechnology() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException, ResearchProject.OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException, ResearchProject.ResearchTreeXmlParserException, ResearchProject.OnResearchTechnologyChangeListener.ResearchTechnologyChangeProhibitedException {
+    @Test(expected = ResearchProject.ResearchXmlParserException.class)
+    public void testResearchTreeNoEndTechnology() throws ResearchProject.ResearchXmlParserException {
         DummyXmlEvent[] events = {
                 new DummyXmlStartTag("ResearchTree"),
                 new DummyXmlStartTag("ResearchProject", new String[]{"name", "project"}),
@@ -965,8 +778,8 @@ public class ResearchProjectTest {
         ResearchProject.loadXmlResearchTree(xpp);
     }
 
-    @Test(expected = ResearchProject.ResearchTreeXmlParserException.class)
-    public void testResearchTreeExtraEndTechnology() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException, ResearchProject.OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException, ResearchProject.ResearchTreeXmlParserException, ResearchProject.OnResearchTechnologyChangeListener.ResearchTechnologyChangeProhibitedException {
+    @Test(expected = ResearchProject.ResearchXmlParserException.class)
+    public void testResearchTreeExtraEndTechnology() throws ResearchProject.ResearchXmlParserException {
         DummyXmlEvent[] events = {
                 new DummyXmlStartTag("ResearchTree"),
                 new DummyXmlStartTag("ResearchProject", new String[]{"name", "project"}),
@@ -983,8 +796,8 @@ public class ResearchProjectTest {
         ResearchProject.loadXmlResearchTree(xpp);
     }
 
-    @Test(expected = ResearchProject.ResearchTreeXmlParserException.class)
-    public void testResearchTreeLevel0ResearchProject() throws ResearchProject.OnResearchChangeListener.ResearchChangeProhibitedException, ResearchProject.OnResearchDependencyChangeListener.ResearchDependencyChangeProhibitedException, ResearchProject.ResearchTreeXmlParserException, ResearchProject.OnResearchTechnologyChangeListener.ResearchTechnologyChangeProhibitedException {
+    @Test(expected = ResearchProject.ResearchXmlParserException.class)
+    public void testResearchTreeLevel0ResearchProject() throws ResearchProject.ResearchXmlParserException {
         DummyXmlEvent[] events = {
                 new DummyXmlEmptyStartTag("ResearchProject", new String[]{"name", "project"}),
                 new DummyXmlEndTag("ResearchProject"),
@@ -997,19 +810,14 @@ public class ResearchProjectTest {
     class ResearchChangeListener implements ResearchProject.OnResearchChangeListener {
         int projectsAdded = 0;
         int projectsRemoved = 0;
-        boolean prohibit = false;
 
         @Override
-        public void onResearchProjectAdded(ResearchProject project) throws ResearchChangeProhibitedException {
-            if (prohibit)
-                throw new ResearchChangeProhibitedException("prohibited");
+        public void onResearchProjectAdded(ResearchProject project) {
             projectsAdded += 1;
         }
 
         @Override
-        public void onResearchProjectRemoved(ResearchProject project) throws ResearchChangeProhibitedException {
-            if (prohibit)
-                throw new ResearchChangeProhibitedException("prohibited");
+        public void onResearchProjectRemoved(ResearchProject project) {
             projectsRemoved += 1;
         }
     }
@@ -1017,91 +825,53 @@ public class ResearchProjectTest {
     ////////////////////////////////////////////////////////////////////
 
     class ResearchTechnologyChangeListener implements ResearchProject.OnResearchTechnologyChangeListener {
-        boolean prohibit = false;
         int technologiesAdded = 0;
         int technologiesRemoved = 0;
 
         @Override
-        public void onTechnologyAdded(ResearchProject project, String technology) throws ResearchTechnologyChangeProhibitedException {
-            if (prohibit)
-                throw new ResearchTechnologyChangeProhibitedException("prohibited");
+        public void onTechnologyAdded(ResearchProject project, String technology) {
             technologiesAdded += 1;
         }
 
         @Override
-        public void onTechnologyRemoved(ResearchProject project, String technology) throws ResearchTechnologyChangeProhibitedException {
-            if (prohibit)
-                throw new ResearchTechnologyChangeProhibitedException("prohibited");
+        public void onTechnologyRemoved(ResearchProject project, String technology) {
             technologiesRemoved += 1;
         }
     }
 
     class ResearchDependencyChangeListener implements ResearchProject.OnResearchDependencyChangeListener {
-        boolean prohibit = false;
         int dependentsAdded = 0;
         int dependentsRemoved = 0;
         int dependersAdded = 0;
         int dependersRemoved = 0;
 
         @Override
-        public void onDependentAdded(ResearchProject project, ResearchProject dependent) throws ResearchDependencyChangeProhibitedException {
-            if (prohibit)
-                throw new ResearchDependencyChangeProhibitedException("prohibited");
+        public void onDependentAdded(ResearchProject project, ResearchProject dependent) {
             dependentsAdded += 1;
         }
 
         @Override
-        public void onDependentRemoved(ResearchProject project, ResearchProject dependent) throws ResearchDependencyChangeProhibitedException {
-            if (prohibit)
-                throw new ResearchDependencyChangeProhibitedException("prohibited");
+        public void onDependentRemoved(ResearchProject project, ResearchProject dependent) {
             dependentsRemoved += 1;
         }
 
         @Override
-        public void onDependerAdded(ResearchProject project, ResearchProject depender) throws ResearchDependencyChangeProhibitedException {
-            if (prohibit)
-                throw new ResearchDependencyChangeProhibitedException("prohibited");
+        public void onDependerAdded(ResearchProject project, ResearchProject depender) {
             dependersAdded += 1;
         }
 
         @Override
-        public void onDependerRemoved(ResearchProject project, ResearchProject depender) throws ResearchDependencyChangeProhibitedException {
-            if (prohibit)
-                throw new ResearchDependencyChangeProhibitedException("prohibited");
+        public void onDependerRemoved(ResearchProject project, ResearchProject depender) {
             dependersRemoved += 1;
         }
     }
 
-    public class ResearchStatusChangeListener implements ResearchProject.OnResearchStatusChangeListener {
+    public class ResearchCompletedChangeListener implements ResearchProject.OnResearchCompletedChangeListener {
         public int countCompletedChange = 0;
-        public int countGoalChange = 0;
-        public int countInPathChange = 0;
-        public int countPathNumberChange = 0;
-        public int countGoalNumberChange = 0;
 
         @Override
-        public void onCompletedChange(ResearchProject project, boolean completed) {
+        public void onResearchCompletedChange(ResearchProject project, boolean completed) {
             this.countCompletedChange += 1;
-        }
-
-        @Override
-        public void onGoalChange(ResearchProject project, boolean goal) {
-            this.countGoalChange += 1;
-        }
-
-        @Override
-        public void onInPathChange(ResearchProject project, boolean inPath) {
-            this.countInPathChange += 1;
-        }
-
-        @Override
-        public void onGoalNumberChange(ResearchProject project, int goalNumber) {
-            this.countGoalNumberChange += 1;
-        }
-
-        @Override
-        public void onPathNumberChange(ResearchProject project, int pathNumber) {
-            this.countPathNumberChange += 1;
         }
     }
 

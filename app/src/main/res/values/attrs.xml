@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <attr name="colorText" format="reference"/>
+    <attr name="normalBackground" format="reference"/>
+    <attr name="selectedBackground" format="reference"/>
+    <attr name="menuThemeDarkVisibility" format="reference"/>
+    <attr name="menuThemeLightVisibility" format="reference"/>
+</resources>

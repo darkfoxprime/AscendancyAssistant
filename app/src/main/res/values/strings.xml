@@ -1,3 +1,19 @@
 <resources>
     <string name="app_name">Ascendancy Assistant</string>
+    <string name="menu_theme_light">Light Theme</string>
+    <string name="menu_theme_dark">Dark Theme</string>
+    <string name="complete_dependencies">Complete Dependencies</string>
+    <string name="complete_project">Complete Project</string>
+    <string name="add_goal">Add Goal</string>
+    <string name="move_up">Move Up</string>
+    <string name="move_down">Move Down</string>
+    <string name="remove">Remove</string>
+    <string-array name="research_list_displays">
+        <!-- these items must be in same order as SHOW_ constants in ResearchListAdapter -->
+        <item>All</item> <!-- SHOW_ALL -->
+        <item>Available</item> <!-- SHOW_AVAILABLE -->
+        <item>Researching</item> <!-- SHOW_RESEARCHING -->
+        <item>Completed</item> <!-- SHOW_COMPLETED -->
+        <item>Initial Goals</item> <!-- SHOW_INITIAL -->
+    </string-array>
 </resources>

@@ -5,16 +5,16 @@
 
     <application
         android:allowBackup="true"
+        android:fullBackupContent="false"
         android:icon="@mipmap/ascendancy_assistant"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/AppTheme"
-        android:fullBackupContent="false"
+        android:theme="@style/AppLight"
         tools:ignore="GoogleAppIndexingWarning">
         <activity
             android:name=".AssistantActivity"
             android:label="@string/app_name"
-            android:theme="@style/AppTheme.NoActionBar">
+            android:theme="@style/AppLight">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
