@@ -1,0 +1,34 @@
+Model-View-Controller
+for the Research component
+
+Model:
+  ResearchProject
+    primary data source
+    includes structural data (e.g. research tree)
+    persistent state data (e.g. completion status, research path)
+    transient state data (e.g. selection states)
+  ResearchInstance
+    driven off of callbacks from ResearchProject
+    includes structural, persistent, and transient data
+    can record into or restore from a Bundle
+    contains methods to re-build ResearchProject
+  ResearchDatabase
+    driven off of callbacks from ResearchProject
+    includes structural and persistent data, but not transient data
+    contains methods to re-build ResearchProject
+
+View:
+  ResearchListAdapter
+    primary view, a list of research items including icon, title, technologies, and index into research path
+    different views:  all research items, completed, available, researching, or the recommended initial research goals
+    ?? driven off of callbacks from the In-Memory model?
+    ?? driven off of callbacks from the controller?
+    ?? some of both?
+  ResearchProjectAdapter
+    ?? maybe
+    A single large view of a research project, showing icon, title, technologies, index into research path, as well as the dependencies (up and down) for the project
+
+Controller:
+  ResearchListController
+    coordinates the model and view
+    ...
